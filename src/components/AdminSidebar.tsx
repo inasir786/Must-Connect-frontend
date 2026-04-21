@@ -32,7 +32,7 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
   const location = useLocation();
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar">
+    <aside className="flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar shadow-sm">
       {/* Logo */}
       <div className="flex items-center gap-3 border-b border-sidebar-border px-5 py-5">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
