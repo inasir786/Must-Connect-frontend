@@ -12,15 +12,17 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="flex min-h-screen w-full bg-background">
-      {/* Desktop sidebar */}
-      <div className="hidden md:flex md:shrink-0">
-        <AdminSidebar />
+      {/* Desktop sidebar — fixed */}
+      <div className="hidden lg:block lg:w-64 lg:shrink-0">
+        <div className="fixed inset-y-0 left-0 z-30 w-64">
+          <AdminSidebar />
+        </div>
       </div>
 
       {/* Mobile drawer */}
       <div
         className={cn(
-          "fixed inset-0 z-40 md:hidden",
+          "fixed inset-0 z-40 lg:hidden",
           open ? "pointer-events-auto" : "pointer-events-none",
         )}
       >
@@ -33,7 +35,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         />
         <div
           className={cn(
-            "absolute inset-y-0 left-0 transition-transform",
+            "absolute inset-y-0 left-0 w-64 transition-transform",
             open ? "translate-x-0" : "-translate-x-full",
           )}
         >
@@ -44,7 +46,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile header */}
-        <header className="flex h-14 items-center gap-3 border-b border-border bg-card px-4 md:hidden">
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-card px-4 lg:hidden">
           <button
             onClick={() => setOpen((o) => !o)}
             className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted"
@@ -55,7 +57,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <span className="font-semibold">MUST Connect</span>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );
