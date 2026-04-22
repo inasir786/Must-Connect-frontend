@@ -18,7 +18,7 @@ const navItems = [
   { to: "/batches", label: "Batches", icon: Upload },
   { to: "/", label: "Campaigns", icon: Megaphone },
   { to: "/", label: "Sending Numbers", icon: Phone },
-  { to: "/", label: "Media", icon: ImageIcon },
+  { to: "/media", label: "Media", icon: ImageIcon },
   { to: "/", label: "FAQs", icon: HelpCircle },
   { to: "/", label: "Chats", icon: MessageSquare },
   { to: "/settings", label: "Settings", icon: Settings },
@@ -50,6 +50,7 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
           const isActive =
             (item.label === "Dashboard" && location.pathname === "/") ||
             (item.label === "Batches" && location.pathname === "/batches") ||
+            (item.label === "Media" && location.pathname === "/media") ||
             (item.label === "Settings" && location.pathname === "/settings");
           const Icon = item.icon;
           return (
