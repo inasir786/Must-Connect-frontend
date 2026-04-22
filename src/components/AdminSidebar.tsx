@@ -50,7 +50,7 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
           const isActive =
             (item.label === "Dashboard" && location.pathname === "/") ||
             (item.label === "Batches" && location.pathname === "/batches") ||
-            (item.label === "Media" && location.pathname === "/media") ||
+            (item.label === "Media" && location.pathname.startsWith("/media")) ||
             (item.label === "Settings" && location.pathname === "/settings");
           const Icon = item.icon;
           return (

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -116,8 +116,10 @@ function MediaPage() {
           {categories.map((c) => {
             const Icon = c.icon;
             return (
-              <div
+              <Link
                 key={c.name}
+                to="/media/$category"
+                params={{ category: c.name }}
                 className={`group rounded-xl border border-t-4 border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md ${c.color}`}
               >
                 <div className="flex items-start justify-between">
@@ -125,10 +127,20 @@ function MediaPage() {
                     <Icon className="h-5 w-5" />
                   </div>
                   <div className="flex items-center gap-1 opacity-60 transition-opacity group-hover:opacity-100">
-                    <button className="rounded p-1.5 hover:bg-muted" aria-label="Edit">
+                    <button
+                      type="button"
+                      onClick={(e) => e.preventDefault()}
+                      className="rounded p-1.5 hover:bg-muted"
+                      aria-label="Edit"
+                    >
                       <Pencil className="h-4 w-4 text-muted-foreground" />
                     </button>
-                    <button className="rounded p-1.5 hover:bg-muted" aria-label="Delete">
+                    <button
+                      type="button"
+                      onClick={(e) => e.preventDefault()}
+                      className="rounded p-1.5 hover:bg-muted"
+                      aria-label="Delete"
+                    >
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </button>
                   </div>
@@ -140,7 +152,7 @@ function MediaPage() {
                     <span>{c.items} items</span>
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
