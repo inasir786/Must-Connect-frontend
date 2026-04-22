@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/", label: "Batches", icon: Upload },
+  { to: "/batches", label: "Batches", icon: Upload },
   { to: "/", label: "Campaigns", icon: Megaphone },
   { to: "/", label: "Sending Numbers", icon: Phone },
   { to: "/", label: "Media", icon: ImageIcon },
@@ -49,6 +49,7 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
         {navItems.map((item, idx) => {
           const isActive =
             (item.label === "Dashboard" && location.pathname === "/") ||
+            (item.label === "Batches" && location.pathname === "/batches") ||
             (item.label === "Settings" && location.pathname === "/settings");
           const Icon = item.icon;
           return (
