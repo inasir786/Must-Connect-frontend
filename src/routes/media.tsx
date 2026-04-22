@@ -116,20 +116,24 @@ function MediaPage() {
           {categories.map((c) => {
             const Icon = c.icon;
             return (
-              <Link
+              <div
                 key={c.name}
-                to="/media/$category"
-                params={{ category: c.name }}
-                className={`group rounded-xl border border-t-4 border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md ${c.color}`}
+                className={`group relative rounded-xl border border-t-4 border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md ${c.color}`}
               >
-                <div className="flex items-start justify-between">
+                <Link
+                  to="/media/$category"
+                  params={{ category: c.name }}
+                  className="absolute inset-0 z-0 rounded-xl"
+                  aria-label={`Open ${c.name}`}
+                />
+                <div className="relative z-10 flex items-start justify-between pointer-events-none">
                   <div className={`flex h-10 w-10 items-center justify-center rounded-lg bg-muted ${c.color.split(" ")[0]}`}>
                     <Icon className="h-5 w-5" />
                   </div>
-                  <div className="flex items-center gap-1 opacity-60 transition-opacity group-hover:opacity-100">
+                  <div className="flex items-center gap-1 opacity-60 transition-opacity group-hover:opacity-100 pointer-events-auto">
                     <button
                       type="button"
-                      onClick={(e) => e.preventDefault()}
+                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
                       className="rounded p-1.5 hover:bg-muted"
                       aria-label="Edit"
                     >
@@ -137,7 +141,7 @@ function MediaPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={(e) => e.preventDefault()}
+                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
                       className="rounded p-1.5 hover:bg-muted"
                       aria-label="Delete"
                     >
@@ -145,14 +149,14 @@ function MediaPage() {
                     </button>
                   </div>
                 </div>
-                <div className="mt-3">
+                <div className="relative z-10 mt-3 pointer-events-none">
                   <p className={`text-base font-semibold ${c.color.split(" ")[0]}`}>{c.name}</p>
                   <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                     <ImageIcon className="h-3.5 w-3.5" />
                     <span>{c.items} items</span>
                   </div>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>
