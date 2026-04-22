@@ -13,6 +13,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ChatsRouteImport } from './routes/chats'
 import { Route as BatchesRouteImport } from './routes/batches'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MediaCategoryRouteImport } from './routes/media.$category'
@@ -37,6 +38,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChatsRoute = ChatsRouteImport.update({
+  id: '/chats',
+  path: '/chats',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BatchesRoute = BatchesRouteImport.update({
   id: '/batches',
   path: '/batches',
@@ -56,6 +62,7 @@ const MediaCategoryRoute = MediaCategoryRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
+  '/chats': typeof ChatsRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
+  '/chats': typeof ChatsRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
+  '/chats': typeof ChatsRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/batches'
+    | '/chats'
     | '/login'
     | '/media'
     | '/reset-password'
@@ -95,6 +105,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/batches'
+    | '/chats'
     | '/login'
     | '/media'
     | '/reset-password'
@@ -104,6 +115,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/batches'
+    | '/chats'
     | '/login'
     | '/media'
     | '/reset-password'
@@ -114,6 +126,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BatchesRoute: typeof BatchesRoute
+  ChatsRoute: typeof ChatsRoute
   LoginRoute: typeof LoginRoute
   MediaRoute: typeof MediaRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -148,6 +161,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chats': {
+      id: '/chats'
+      path: '/chats'
+      fullPath: '/chats'
+      preLoaderRoute: typeof ChatsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/batches': {
@@ -187,6 +207,7 @@ const MediaRouteWithChildren = MediaRoute._addFileChildren(MediaRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BatchesRoute: BatchesRoute,
+  ChatsRoute: ChatsRoute,
   LoginRoute: LoginRoute,
   MediaRoute: MediaRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,

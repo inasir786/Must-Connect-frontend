@@ -20,7 +20,7 @@ const navItems = [
   { to: "/", label: "Sending Numbers", icon: Phone },
   { to: "/media", label: "Media", icon: ImageIcon },
   { to: "/", label: "FAQs", icon: HelpCircle },
-  { to: "/", label: "Chats", icon: MessageSquare },
+  { to: "/chats", label: "Chats", icon: MessageSquare },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
@@ -51,6 +51,7 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
             (item.label === "Dashboard" && location.pathname === "/") ||
             (item.label === "Batches" && location.pathname === "/batches") ||
             (item.label === "Media" && location.pathname.startsWith("/media")) ||
+            (item.label === "Chats" && location.pathname === "/chats") ||
             (item.label === "Settings" && location.pathname === "/settings");
           const Icon = item.icon;
           return (
