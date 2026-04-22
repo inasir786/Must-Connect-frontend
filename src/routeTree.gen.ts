@@ -15,6 +15,7 @@ import { Route as MediaRouteImport } from './routes/media'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as BatchesRouteImport } from './routes/batches'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MediaCategoryRouteImport } from './routes/media.$category'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -46,31 +47,39 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MediaCategoryRoute = MediaCategoryRouteImport.update({
+  id: '/$category',
+  path: '/$category',
+  getParentRoute: () => MediaRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
   '/login': typeof LoginRoute
-  '/media': typeof MediaRoute
+  '/media': typeof MediaRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/media/$category': typeof MediaCategoryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
   '/login': typeof LoginRoute
-  '/media': typeof MediaRoute
+  '/media': typeof MediaRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/media/$category': typeof MediaCategoryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
   '/login': typeof LoginRoute
-  '/media': typeof MediaRoute
+  '/media': typeof MediaRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/media/$category': typeof MediaCategoryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,8 +90,16 @@ export interface FileRouteTypes {
     | '/media'
     | '/reset-password'
     | '/settings'
+    | '/media/$category'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/batches' | '/login' | '/media' | '/reset-password' | '/settings'
+  to:
+    | '/'
+    | '/batches'
+    | '/login'
+    | '/media'
+    | '/reset-password'
+    | '/settings'
+    | '/media/$category'
   id:
     | '__root__'
     | '/'
@@ -91,13 +108,14 @@ export interface FileRouteTypes {
     | '/media'
     | '/reset-password'
     | '/settings'
+    | '/media/$category'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BatchesRoute: typeof BatchesRoute
   LoginRoute: typeof LoginRoute
-  MediaRoute: typeof MediaRoute
+  MediaRoute: typeof MediaRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
 }
@@ -146,14 +164,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/media/$category': {
+      id: '/media/$category'
+      path: '/$category'
+      fullPath: '/media/$category'
+      preLoaderRoute: typeof MediaCategoryRouteImport
+      parentRoute: typeof MediaRoute
+    }
   }
 }
+
+interface MediaRouteChildren {
+  MediaCategoryRoute: typeof MediaCategoryRoute
+}
+
+const MediaRouteChildren: MediaRouteChildren = {
+  MediaCategoryRoute: MediaCategoryRoute,
+}
+
+const MediaRouteWithChildren = MediaRoute._addFileChildren(MediaRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BatchesRoute: BatchesRoute,
   LoginRoute: LoginRoute,
-  MediaRoute: MediaRoute,
+  MediaRoute: MediaRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
 }
