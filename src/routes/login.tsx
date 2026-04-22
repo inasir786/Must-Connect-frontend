@@ -163,15 +163,15 @@ function LoginPage() {
           Password
         </label>
 
-        <a
-          href="#"
+        <Link
+          to="/reset-password"
           className="text-sm font-medium transition-colors"
           style={{ color: "#2563eb" }}
           onMouseOver={(e) => (e.currentTarget.style.color = "#1e40af")}
           onMouseOut={(e) => (e.currentTarget.style.color = "#2563eb")}
         >
           Forgot password?
-        </a>
+        </Link>
       </div>
 
       <div className="relative">
@@ -259,7 +259,6 @@ function LoginPage() {
         style={{
           borderRadius: "12px",
           backgroundColor: "#ea580c",
-          focusRingColor: "#ea580c",
         }}
         onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#c2410c")}
         onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#ea580c")}
