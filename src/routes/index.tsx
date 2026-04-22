@@ -1,16 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  Upload,
-  MessageSquare,
-  Eye,
-  CheckCircle2,
-  Clock,
-  ArrowRight,
-  FileText,
-} from "lucide-react";
 import { AdminLayout } from "@/components/AdminLayout";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,134 +11,277 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-const stats = [
-  { label: "Total Batches Uploaded", value: "12,847", icon: Upload, accent: "text-primary", bg: "bg-primary/10" },
-  { label: "Total Engagement", value: "600", icon: MessageSquare, accent: "text-accent", bg: "bg-accent/10" },
-  { label: "University Visits", value: "142", icon: Eye, accent: "text-success", bg: "bg-success/10" },
-];
-
-const uploads = [
-  { name: "Batch_Spring2026_Engineering.csv", date: "Jan 15, 2026", contacts: "1,250 contacts", status: "Validated" },
-  { name: "Batch_Spring2026_Business.csv", date: "Jan 14, 2026", contacts: "892 contacts", status: "Validated" },
-  { name: "Batch_Spring2026_Sciences.csv", date: "Jan 13, 2026", contacts: "1,540 contacts", status: "Processing" },
-  { name: "Batch_Spring2026_Arts.csv", date: "Jan 12, 2026", contacts: "678 contacts", status: "Validated" },
+const recentBatches = [
+  {
+    name: "Engineering Prospects Q1",
+    date: "Apr 14, 2026",
+    contacts: "2,340 contacts",
+    status: "Validated",
+  },
+  {
+    name: "Business Studies Leads",
+    date: "Apr 13, 2026",
+    contacts: "1,890 contacts",
+    status: "Validated",
+  },
+  {
+    name: "Medical Sciences Prospects",
+    date: "Apr 12, 2026",
+    contacts: "1,560 contacts",
+    status: "Processing",
+  },
+  {
+    name: "Computer Science Inquiries",
+    date: "Apr 11, 2026",
+    contacts: "3,120 contacts",
+    status: "Validated",
+  },
 ];
 
 function Dashboard() {
   return (
     <AdminLayout>
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground md:text-3xl">Dashboard</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Welcome back! Here's what's happening with your campaigns.
-          </p>
+      {/* Page Header */}
+      <header
+        className="bg-white border-b border-slate-200 px-6 sm:px-8 lg:px-12 py-6 lg:py-4"
+        style={{ margin: "0 -1.5rem" }}
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+              Dashboard
+            </h1>
+            <p className="text-slate-500 text-sm sm:text-base mt-1">Welcome back, Admin</p>
+          </div>
         </div>
+      </header>
 
-        {/* Campaign card */}
-        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold text-foreground">Spring 2026 Admissions Campaign</h2>
-                <Badge className="bg-success text-success-foreground hover:bg-success">Active</Badge>
+      <main className="px-0 py-8 lg:py-12 max-w-[1400px]">
+
+        {/* ── Primary Campaign Card ── */}
+        <section className="mb-8 lg:mb-12">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-6 sm:p-7 lg:p-8">
+              {/* Top Row */}
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-3">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+                      Spring 2026 Admissions Campaign
+                    </h2>
+                    <span
+                      className="px-2.5 py-0.5 text-xs font-semibold rounded-full border"
+                      style={{
+                        backgroundColor: "#f0fdf4",
+                        color: "#15803d",
+                        borderColor: "#bbf7d0",
+                      }}
+                    >
+                      Active
+                    </span>
+                  </div>
+                  <p className="text-slate-500 text-xs sm:text-sm">
+                    Outreach campaign targeting prospective students for Spring 2026 enrollment
+                  </p>
+                </div>
+                <button
+                  className="flex items-center justify-center gap-2 px-4 py-2 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors w-full sm:w-auto"
+                  style={{ backgroundColor: "#003d82" }}
+                  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#1e40af")}
+                  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#003d82")}
+                >
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>Manage Campaign</span>
+                </button>
               </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Outreach campaign for Spring 2026 student admissions
+
+              {/* Progress Bar */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-slate-700">Campaign Progress</span>
+                  <span className="text-xs font-bold" style={{ color: "#003d82" }}>68%</span>
+                </div>
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: "68%", backgroundColor: "#003d82" }}
+                  />
+                </div>
+              </div>
+
+              {/* Sub Stats */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-7 h-7 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: "#f0fdf4" }}
+                    >
+                      <svg className="w-3 h-3" style={{ color: "#16a34a" }} fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Sent</span>
+                  </div>
+                  <p className="text-2xl sm:text-3xl font-bold text-slate-900">3,420</p>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-7 h-7 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: "#fffbeb" }}
+                    >
+                      <svg className="w-3 h-3" style={{ color: "#d97706" }} fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Pending</span>
+                  </div>
+                  <p className="text-2xl sm:text-3xl font-bold text-slate-900">1,580</p>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-7 h-7 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: "#faf5ff" }}
+                    >
+                      <svg className="w-3 h-3" style={{ color: "#9333ea" }} fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Engagement</span>
+                  </div>
+                  <p className="text-2xl sm:text-3xl font-bold text-slate-900">284</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Key Stats Row ── */}
+        <section className="mb-8 lg:mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {/* Total Batches */}
+            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: "#eff6ff" }}
+                >
+                  <svg className="w-5 h-5" style={{ color: "#003d82" }} fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                    <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-sm font-medium text-slate-500 mb-1">Total Batches</p>
+              <p className="text-3xl font-bold text-slate-900">12,847</p>
+            </div>
+
+            {/* Engagement */}
+            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: "#faf5ff" }}
+                >
+                  <svg className="w-5 h-5" style={{ color: "#9333ea" }} fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-sm font-medium text-slate-500 mb-1">Engagement</p>
+              <p className="text-3xl font-bold text-slate-900">600</p>
+            </div>
+
+            {/* University Visits */}
+            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: "#f0fdf4" }}
+                >
+                  <svg className="w-5 h-5" style={{ color: "#16a34a" }} fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10.496 2.132a1 1 0 00-.992 0l-7 4A1 1 0 003 8v7a1 1 0 100 2h14a1 1 0 100-2V8a1 1 0 00.496-1.868l-7-4zM6 9a1 1 0 00-1 1v3a1 1 0 102 0v-3a1 1 0 00-1-1zm3 1a1 1 0 012 0v3a1 1 0 11-2 0v-3zm5-1a1 1 0 00-1 1v3a1 1 0 102 0v-3a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-sm font-medium text-slate-500 mb-1">University Visits</p>
+              <p className="text-3xl font-bold text-slate-900">142</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Recent Batch Uploads ── */}
+        <section className="mb-8 lg:mb-12">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-6 sm:px-8 py-6 border-b border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900">Recent Batch Uploads</h3>
+              <p className="text-sm text-slate-500 mt-1">
+                Latest contact batches uploaded to the system
               </p>
             </div>
-            <Button className="bg-primary text-primary-foreground hover:bg-primary-glow">
-              Manage Campaign
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Progress */}
-          <div className="mt-6 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Campaign Progress</span>
-              <span className="font-medium text-foreground">68%</span>
-            </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-              <div className="h-full rounded-full bg-primary" style={{ width: "68%" }} />
-            </div>
-          </div>
-
-          {/* Sub-stats */}
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="rounded-lg bg-muted/50 p-4">
-              <p className="text-xs text-muted-foreground">Sent</p>
-              <p className="mt-1 text-2xl font-bold text-primary">3,420</p>
-            </div>
-            <div className="rounded-lg bg-muted/50 p-4">
-              <p className="text-xs text-muted-foreground">Pending</p>
-              <p className="mt-1 text-2xl font-bold text-warning">1,580</p>
-            </div>
-            <div className="rounded-lg bg-muted/50 p-4">
-              <p className="text-xs text-muted-foreground">Engagement</p>
-              <p className="mt-1 text-2xl font-bold text-accent">284</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Stat cards */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {stats.map((s) => {
-            const Icon = s.icon;
-            return (
-              <div key={s.label} className="rounded-xl border border-border bg-card p-5 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">{s.label}</p>
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${s.bg}`}>
-                    <Icon className={`h-5 w-5 ${s.accent}`} />
+            <div className="divide-y divide-slate-100">
+              {recentBatches.map((batch) => (
+                <div
+                  key={batch.name}
+                  className="px-6 sm:px-8 py-5 hover:bg-slate-50 transition-colors"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-slate-900 mb-1">{batch.name}</h4>
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                        <span className="flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span>{batch.date}</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                          </svg>
+                          <span>{batch.contacts}</span>
+                        </span>
+                      </div>
+                    </div>
+                    {batch.status === "Validated" ? (
+                      <span
+                        className="px-3 py-1 text-xs font-semibold rounded-full border w-fit"
+                        style={{
+                          backgroundColor: "#f0fdf4",
+                          color: "#15803d",
+                          borderColor: "#bbf7d0",
+                        }}
+                      >
+                        Validated
+                      </span>
+                    ) : (
+                      <span
+                        className="px-3 py-1 text-xs font-semibold rounded-full border w-fit"
+                        style={{
+                          backgroundColor: "#fffbeb",
+                          color: "#b45309",
+                          borderColor: "#fde68a",
+                        }}
+                      >
+                        Processing
+                      </span>
+                    )}
                   </div>
                 </div>
-                <p className="mt-3 text-3xl font-bold text-foreground">{s.value}</p>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Recent uploads */}
-        <div className="rounded-xl border border-border bg-card shadow-sm">
-          <div className="flex items-center justify-between border-b border-border px-6 py-4">
-            <div>
-              <h3 className="font-semibold text-foreground">Recent Batch Uploads</h3>
-              <p className="text-xs text-muted-foreground">Latest CSV files uploaded to the system</p>
+              ))}
             </div>
-            <Button variant="ghost" size="sm" className="text-primary">
-              View All
-            </Button>
           </div>
-          <ul className="divide-y divide-border">
-            {uploads.map((u) => (
-              <li key={u.name} className="flex items-center justify-between gap-3 px-6 py-4">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                    <FileText className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">{u.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {u.date} • {u.contacts}
-                    </p>
-                  </div>
-                </div>
-                {u.status === "Validated" ? (
-                  <Badge className="shrink-0 bg-success/15 text-success hover:bg-success/15">
-                    <CheckCircle2 className="mr-1 h-3 w-3" /> Validated
-                  </Badge>
-                ) : (
-                  <Badge className="shrink-0 bg-warning/20 text-warning hover:bg-warning/20">
-                    <Clock className="mr-1 h-3 w-3" /> Processing
-                  </Badge>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+        </section>
+
+      </main>
     </AdminLayout>
   );
 }
