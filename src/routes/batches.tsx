@@ -29,7 +29,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { UploadCloud } from "lucide-react";
+import { UploadCloud, Eye, ArrowUpCircle, GitMerge, Archive } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/batches")({
   head: () => ({
@@ -246,13 +252,35 @@ function BatchesPage() {
                 >
                   <Layers className={`h-5 w-5 ${b.iconColor}`} />
                 </div>
-                <button
-                  type="button"
-                  className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                  aria-label="More options"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      aria-label="More options"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuItem>
+                      <Eye className="mr-2 h-4 w-4 text-muted-foreground" />
+                      View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <ArrowUpCircle className="mr-2 h-4 w-4 text-muted-foreground" />
+                      Upgrade Batch
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <GitMerge className="mr-2 h-4 w-4 text-muted-foreground" />
+                      Merge Batch
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive focus:text-destructive">
+                      <Archive className="mr-2 h-4 w-4" />
+                      Archive Batch
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
               <h3 className="font-semibold text-foreground">{b.name}</h3>
