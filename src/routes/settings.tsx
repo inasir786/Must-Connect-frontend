@@ -11,7 +11,7 @@ export const Route = createFileRoute("/settings")({
       { name: "description", content: "Manage your MUST Connect profile and security settings." },
     ],
   }),
-  component: SettingsPage,
+  component: () => <SettingsPage />,
 });
 
 function extractError(err: any): string {
