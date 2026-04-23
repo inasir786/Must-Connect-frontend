@@ -10,7 +10,7 @@ export const Route = createFileRoute("/reset-password")({
       { name: "description", content: "Reset your MUST Connect admin password." },
     ],
   }),
-  component: ResetPasswordPage,
+  component: () => <ResetPasswordPage />,
 });
 
 const ResetPasswordPage = memo(function ResetPasswordPage() {

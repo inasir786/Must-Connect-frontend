@@ -12,7 +12,7 @@ export const Route = createFileRoute("/login")({
       { name: "description", content: "Sign in to MUST Connect Admin Portal." },
     ],
   }),
-  component: LoginPage,
+  component: () => <LoginPage />,
 });
 
 const LoginPage = memo(function LoginPage() {
