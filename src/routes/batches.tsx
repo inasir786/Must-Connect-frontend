@@ -19,6 +19,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { UploadCloud } from "lucide-react";
 
 export const Route = createFileRoute("/batches")({
   head: () => ({
@@ -105,6 +116,7 @@ const batches: Batch[] = [
 
 function BatchesPage() {
   const [query, setQuery] = useState("");
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   return (
     <AdminLayout>
@@ -117,10 +129,71 @@ function BatchesPage() {
               Manage student contact batches and data uploads
             </p>
           </div>
-          <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
-            <Upload className="mr-2 h-4 w-4" />
-            Upload Batch
-          </Button>
+          <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
+                <Upload className="mr-2 h-4 w-4" />
+                Upload Batch
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[480px]">
+              <DialogHeader>
+                <DialogTitle>Upload Batch</DialogTitle>
+                <DialogDescription>Add a new student contact batch</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title</Label>
+                  <Input id="title" placeholder="e.g., Spring 2026 Admissions" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="batch-name">Batch Name</Label>
+                  <Input id="batch-name" placeholder="e.g., Engineering Prospects Q2" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="education-year">Education Year</Label>
+                  <Select>
+                    <SelectTrigger id="education-year">
+                      <SelectValue placeholder="Select education year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fsc-1">FSC Part 1</SelectItem>
+                      <SelectItem value="fsc-2">FSC Part 2</SelectItem>
+                      <SelectItem value="ics-1">ICS Part 1</SelectItem>
+                      <SelectItem value="ics-2">ICS Part 2</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Upload File</Label>
+                  <label
+                    htmlFor="file-upload"
+                    className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/30 px-6 py-10 text-center transition-colors hover:bg-muted/50"
+                  >
+                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent/10">
+                      <UploadCloud className="h-6 w-6 text-accent" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground">
+                      Drop your file here or click to browse
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Supports CSV and Excel files (max 10MB)
+                    </p>
+                    <input id="file-upload" type="file" accept=".csv,.xlsx,.xls" className="hidden" />
+                  </label>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setUploadOpen(false)}>
+                  Cancel
+                </Button>
+                <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Batch
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Filters */}
