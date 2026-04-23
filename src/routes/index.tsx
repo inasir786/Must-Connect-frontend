@@ -40,23 +40,21 @@ const recentBatches = [
 
 function Dashboard() {
   return (
-    <AdminLayout>
-      {/* Page Header */}
-      <header
-        className="bg-white border-b border-slate-200 px-6 sm:px-8 lg:px-12 pb-6 lg:pb-2"
-        style={{ margin: "0 -1.5rem" }}
-      >
+    <AdminLayout
+      header={
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
               Dashboard
             </h1>
-            <p className="text-slate-500 text-sm sm:text-base mt-1">Welcome back, Admin</p>
+            <p className="text-muted-foreground text-sm sm:text-base mt-1">
+              Welcome back, Admin
+            </p>
           </div>
         </div>
-      </header>
-
-      <main className="px-0 py-8 lg:py-12 max-w-[1400px]">
+      }
+    >
+      <main className="px-0 max-w-[1400px]">
 
         {/* ── Primary Campaign Card ── */}
         <section className="mb-8 lg:mb-12">

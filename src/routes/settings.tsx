@@ -229,14 +229,17 @@ const SettingsPage = memo(function SettingsPage() {
   }, [pwdForm, validatePwd]);
 
   return (
-    <AdminLayout>
-      <div className="mx-auto max-w-4xl space-y-6">
+    <AdminLayout
+      header={
         <div>
           <h1 className="text-2xl font-bold text-foreground md:text-3xl">Settings</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Manage your account preferences and security
           </p>
         </div>
+      }
+    >
+      <div className="mx-auto max-w-4xl space-y-6">
 
         <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="mb-5 flex items-center gap-3">
