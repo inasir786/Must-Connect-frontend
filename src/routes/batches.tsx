@@ -119,9 +119,8 @@ function BatchesPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        {/* Header */}
+    <AdminLayout
+      header={
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground md:text-3xl">Batches</h1>
@@ -195,6 +194,9 @@ function BatchesPage() {
             </DialogContent>
           </Dialog>
         </div>
+      }
+    >
+      <div className="space-y-6">
 
         {/* Filters */}
         <div className="flex flex-col gap-3  p-4  sm:flex-row sm:items-center">
