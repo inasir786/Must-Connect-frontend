@@ -92,10 +92,9 @@ function MediaPage() {
   ];
 
   return (
-    <AdminLayout>
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
+    <AdminLayout
+      header={
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Media Categories</h1>
             <p className="text-sm text-muted-foreground">
@@ -110,6 +109,9 @@ function MediaPage() {
             Add Category
           </Button>
         </div>
+      }
+    >
+      <div className="mx-auto max-w-7xl space-y-6">
 
         {/* Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

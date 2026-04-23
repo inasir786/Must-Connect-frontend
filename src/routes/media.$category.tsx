@@ -59,10 +59,9 @@ function CategoryDetailPage() {
   const name = decodeURIComponent(category);
 
   return (
-    <AdminLayout>
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
+    <AdminLayout
+      header={
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
               Media Library <span className="text-muted-foreground">-</span> {name}
@@ -74,6 +73,9 @@ function CategoryDetailPage() {
             Upload Media
           </Button>
         </div>
+      }
+    >
+      <div className="mx-auto max-w-7xl space-y-6">
 
         {/* Tabs + filters */}
         <div className="rounded-xl border border-border bg-card p-4">
