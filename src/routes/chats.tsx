@@ -58,8 +58,15 @@ function ChatsPage() {
   const active = conversations.find((c) => c.id === activeId) ?? conversations[0];
 
   return (
-    <AdminLayout>
-      <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-7xl overflow-hidden rounded-xl border border-border bg-card">
+    <AdminLayout
+      header={
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Chats</h1>
+          <p className="text-sm text-muted-foreground">Monitor student conversations</p>
+        </div>
+      }
+    >
+      <div className="mx-auto flex h-[calc(100vh-12rem)] max-w-7xl overflow-hidden rounded-xl border border-border bg-card">
         {/* Conversation list */}
         <div className="flex w-80 shrink-0 flex-col border-r border-border">
           <div className="border-b border-border p-4">
