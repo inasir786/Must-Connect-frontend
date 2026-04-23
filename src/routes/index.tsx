@@ -43,7 +43,7 @@ function Dashboard() {
     <AdminLayout>
       {/* Page Header */}
       <header
-        className="bg-white border-b border-slate-200 px-6 sm:px-8 lg:px-12 py-6 lg:py-4"
+        className="bg-white border-b border-slate-200 px-6 sm:px-8 lg:px-12 pb-6 lg:pb-2"
         style={{ margin: "0 -1.5rem" }}
       >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">

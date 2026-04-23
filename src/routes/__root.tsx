@@ -1,7 +1,8 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-
+import { Provider } from "react-redux"; 
+import { store } from "@/store";  
 import appCss from "../styles.css?url";
-
+import AppInitializer from "@/components/AppInitializer";
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -65,5 +66,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  return <Outlet />;
+  return (
+    <Provider store={store}>  {/* ← wrap */}
+      <AppInitializer>
+        <Outlet />
+      </AppInitializer>
+    </Provider>
+  );
 }
