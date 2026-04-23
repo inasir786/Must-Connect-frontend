@@ -11,7 +11,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="flex min-h-screen w-full bg-[oklch(0.97_0.005_265)]">
       {/* Desktop sidebar — fixed */}
       <div className="hidden lg:block lg:w-64 lg:shrink-0">
         <div className="fixed inset-y-0 left-0 z-30 w-64">
@@ -57,7 +57,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <span className="font-semibold">MUST Connect</span>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="flex-1 bg-[oklch(0.97_0.005_265)] p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );
