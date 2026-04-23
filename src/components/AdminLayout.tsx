@@ -5,9 +5,10 @@ import { cn } from "@/lib/utils";
 
 interface AdminLayoutProps {
   children: ReactNode;
+  header?: ReactNode;
 }
 
-export function AdminLayout({ children }: AdminLayoutProps) {
+export function AdminLayout({ children, header }: AdminLayoutProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -57,6 +58,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <span className="font-semibold">MUST Connect</span>
         </header>
 
+        {header && (
+          <div className="sticky top-0 z-10 border-b border-border bg-card px-4 py-5 sm:px-6 lg:px-8">
+            {header}
+          </div>
+        )}
         <main className="flex-1 bg-[oklch(0.97_0.005_265)] p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
