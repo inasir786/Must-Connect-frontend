@@ -111,35 +111,31 @@ function CreateCampaignPage() {
 
   const handleSubmit = async (launch: boolean) => {
     setError(null);
-    if (!name.trim()) {
-      setError("Campaign name is required.");
-      return;
-    }
-    if (selectedBatches.length === 0) {
-      setError("Select at least one batch.");
-      return;
-    }
-    if (!message.trim()) {
-      setError("Message template cannot be empty.");
-      return;
-    }
-    if (launch && selectedNumbers.length === 0) {
-      setError("Assign at least one sending number to launch.");
-      return;
-    }
-
     setSaving(true);
     try {
-      await createCampaign({
+      const created = await createCampaign({
         name,
         description,
         batch_ids: selectedBatches,
         message_template: message,
         sending_number_ids: selectedNumbers,
       });
-      navigate({ to: "/campaigns" });
+      if (launch) {
+        navigate({
+          to: "/campaigns/success",
+          search: {
+            name: created.name || name || "Untitled Campaign",
+            contacts: totalContacts,
+          },
+        });
+      } else {
+        navigate({ to: "/campaigns" });
+      }
     } catch (err: any) {
-      setError(err?.message ?? "Failed to create campaign");
+      navigate({
+        to: "/campaigns/failed",
+        search: { reason: err?.message ?? "Failed to create campaign" },
+      });
     } finally {
       setSaving(false);
     }
