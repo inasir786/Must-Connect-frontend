@@ -1,19 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  ArrowLeft,
-  Save,
-  Send,
-  UploadCloud,
-  Phone,
-  Loader2,
-  AlertCircle,
-  CheckCircle2,
-  Image as ImageIcon,
-  Megaphone,
-  Layers,
-  MessageSquare,
-  CircleAlert,
+  ArrowLeft, Save, Send, UploadCloud, Phone,
+  Loader2, AlertCircle, CheckCircle2, Image as ImageIcon,
+  Megaphone, Layers, MessageSquare, CircleAlert,
 } from "lucide-react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -22,11 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  createCampaign,
-  getCampaignBatchOptions,
+  getBatches, createCampaign, launchCampaign,
   getSendingNumbers,
-  type CampaignBatchOption,
-  type SendingNumber,
+  type Batch, type SendingNumber,
 } from "@/api/campaigns";
 
 export const Route = createFileRoute("/campaigns/new")({
@@ -40,11 +28,7 @@ export const Route = createFileRoute("/campaigns/new")({
 });
 
 function SectionCard({
-  step,
-  icon,
-  title,
-  subtitle,
-  children,
+  step, icon, title, subtitle, children,
 }: {
   step: number;
   icon: React.ReactNode;
@@ -71,61 +55,70 @@ function SectionCard({
 
 function CreateCampaignPage() {
   const navigate = useNavigate();
-  const [batches, setBatches] = useState<CampaignBatchOption[]>([]);
-  const [numbers, setNumbers] = useState<SendingNumber[]>([]);
+
+  const [batches, setBatches]   = useState<Batch[]>([]);
+  const [numbers, setNumbers]   = useState<SendingNumber[]>([]);
   const [loadingMeta, setLoadingMeta] = useState(true);
 
-  const [name, setName] = useState("");
+  const [name, setName]               = useState("");
   const [description, setDescription] = useState("");
-  const [selectedBatches, setSelectedBatches] = useState<number[]>([]);
-  const [templateName, setTemplateName] = useState("");
+  const [selectedBatchId, setSelectedBatchId] = useState<number | null>(null); // single batch
+  const [templateName, setTemplateName]       = useState("");
   const [message, setMessage] = useState(
     "Hi {{name}}, applications for the Spring 2026 admissions are now open at MUST University. Reply YES to learn more."
   );
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
 
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving]   = useState(false);
+  const [error, setError]     = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getCampaignBatchOptions(), getSendingNumbers()])
+    Promise.all([getBatches(), getSendingNumbers()])
       .then(([b, n]) => {
         if (cancelled) return;
         setBatches(b);
         setNumbers(n);
       })
+      .catch((err) => {
+        if (!cancelled) setError(err?.message ?? "Failed to load data");
+      })
       .finally(() => {
         if (!cancelled) setLoadingMeta(false);
       });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
-  const toggleBatch = (id: number) =>
-    setSelectedBatches((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
-
   const toggleNumber = (id: number) =>
-    setSelectedNumbers((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+    setSelectedNumbers((cur) =>
+      cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]
+    );
 
   const handleSubmit = async (launch: boolean) => {
+    if (!name.trim()) { setError("Campaign name is required."); return; }
+    if (!selectedBatchId) { setError("Please select a batch."); return; }
+    if (!message.trim()) { setError("Message text is required."); return; }
+
     setError(null);
     setSaving(true);
+
     try {
+      // Step 1 — create as draft
       const created = await createCampaign({
         name,
         description,
-        batch_ids: selectedBatches,
-        message_template: message,
-        sending_number_ids: selectedNumbers,
+        batch_id: selectedBatchId,
+        message_text: message,
       });
+
+      // Step 2 — launch if requested
       if (launch) {
+        await launchCampaign(created.id);
         navigate({
           to: "/campaigns/success",
           search: {
-            name: created.name || name || "Untitled Campaign",
-            contacts: totalContacts,
+            name: name || "Untitled Campaign",
+            contacts: selectedBatch?.valid_whatsapp_count ?? 0,
           },
         });
       } else {
@@ -134,16 +127,14 @@ function CreateCampaignPage() {
     } catch (err: any) {
       navigate({
         to: "/campaigns/failed",
-        search: { reason: err?.message ?? "Failed to create campaign" },
+        search: { reason: err?.response?.data?.detail ?? err?.message ?? "Failed to create campaign" },
       });
     } finally {
       setSaving(false);
     }
   };
 
-  const totalContacts = batches
-    .filter((b) => selectedBatches.includes(b.id))
-    .reduce((sum, b) => sum + b.valid_whatsapp_count, 0);
+  const selectedBatch = batches.find((b) => b.id === selectedBatchId);
 
   return (
     <AdminLayout
@@ -159,9 +150,7 @@ function CreateCampaignPage() {
             </Link>
             <div>
               <h1 className="text-2xl font-bold text-foreground md:text-3xl">Create Campaign</h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Set up a new outreach campaign
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">Set up a new outreach campaign</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -174,11 +163,7 @@ function CreateCampaignPage() {
               onClick={() => handleSubmit(true)}
               disabled={saving}
             >
-              {saving ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="mr-2 h-4 w-4" />
-              )}
+              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
               Launch Campaign
             </Button>
           </div>
@@ -202,7 +187,7 @@ function CreateCampaignPage() {
         >
           <div className="grid gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="name">Campaign Name</Label>
+              <Label htmlFor="name">Campaign Name <span className="text-destructive">*</span></Label>
               <Input
                 id="name"
                 placeholder="e.g., Spring 2026 Admissions"
@@ -223,34 +208,37 @@ function CreateCampaignPage() {
           </div>
         </SectionCard>
 
-        {/* Step 2 — Select Batches */}
+        {/* Step 2 — Select Batch */}
         <SectionCard
           step={2}
           icon={<Layers className="h-4 w-4" />}
-          title="Select Batches"
-          subtitle="Choose batches to include in this campaign"
+          title="Select Batch"
+          subtitle="Choose one batch to include in this campaign"
         >
           {loadingMeta ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
+          ) : batches.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">No validated batches found.</p>
           ) : (
             <div className="space-y-2">
               {batches.map((b) => {
-                const selected = selectedBatches.includes(b.id);
+                const selected = selectedBatchId === b.id;
                 return (
                   <label
                     key={b.id}
                     className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border px-4 py-3 transition-colors ${
-                      selected
-                        ? "border-accent bg-accent/5"
-                        : "border-border hover:bg-muted/40"
+                      selected ? "border-accent bg-accent/5" : "border-border hover:bg-muted/40"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <Checkbox
+                      <input
+                        type="radio"
+                        name="batch"
                         checked={selected}
-                        onCheckedChange={() => toggleBatch(b.id)}
+                        onChange={() => setSelectedBatchId(b.id)}
+                        className="accent-accent"
                       />
                       <div>
                         <p className="text-sm font-semibold text-foreground">
@@ -270,9 +258,10 @@ function CreateCampaignPage() {
               })}
             </div>
           )}
-          {selectedBatches.length > 0 && (
+          {selectedBatch && (
             <p className="mt-3 text-xs text-muted-foreground">
-              {selectedBatches.length} batch(es) selected • {totalContacts.toLocaleString()} total contacts
+              Selected: <span className="font-medium text-foreground">{selectedBatch.batch_name}</span>
+              {" "}• {selectedBatch.valid_whatsapp_count.toLocaleString()} valid contacts
             </p>
           )}
         </SectionCard>
@@ -296,7 +285,7 @@ function CreateCampaignPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="message">Message Body</Label>
+                <Label htmlFor="message">Message Body <span className="text-destructive">*</span></Label>
                 <Textarea
                   id="message"
                   rows={6}
@@ -308,16 +297,15 @@ function CreateCampaignPage() {
                   {message.length}/1024 characters
                 </p>
               </div>
+              {/* Static — no upload logic yet */}
               <div className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center">
                 <UploadCloud className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
                 <p className="text-sm font-medium text-foreground">Attach Media (optional)</p>
-                <p className="text-xs text-muted-foreground">
-                  PNG, JPG or MP4 up to 10 MB
-                </p>
+                <p className="text-xs text-muted-foreground">PNG, JPG or MP4 up to 10 MB</p>
               </div>
             </div>
 
-            {/* Preview */}
+            {/* Static preview */}
             <div className="rounded-lg border border-border bg-muted/40 p-4">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Preview
@@ -332,13 +320,18 @@ function CreateCampaignPage() {
                 <div className="mb-2 flex h-24 items-center justify-center rounded bg-muted text-muted-foreground">
                   <ImageIcon className="h-6 w-6" />
                 </div>
-                <p className="text-xs leading-relaxed text-foreground">{message}</p>
+               {/* Static preview */}
+<p className="text-xs leading-relaxed text-foreground">
+  {message
+    .replace(/\{\{name\}\}/g, "Ahmad")
+    .replace(/\{name\}/g, "Ahmad")}
+</p>
               </div>
             </div>
           </div>
         </SectionCard>
 
-        {/* Step 4 — Sending Numbers */}
+        {/* Step 4 — Sending Numbers (static for now) */}
         <SectionCard
           step={4}
           icon={<Phone className="h-4 w-4" />}
@@ -349,6 +342,8 @@ function CreateCampaignPage() {
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
+          ) : numbers.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">No sending numbers available.</p>
           ) : (
             <div className="space-y-2">
               {numbers.map((n) => {
@@ -381,18 +376,12 @@ function CreateCampaignPage() {
                         </p>
                       </div>
                     </div>
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        n.status === "active"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-slate-100 text-slate-500"
-                      }`}
-                    >
-                      {n.status === "active" ? (
-                        <CheckCircle2 className="h-3 w-3" />
-                      ) : (
-                        <CircleAlert className="h-3 w-3" />
-                      )}
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      n.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
+                    }`}>
+                      {n.status === "active"
+                        ? <CheckCircle2 className="h-3 w-3" />
+                        : <CircleAlert className="h-3 w-3" />}
                       {n.status === "active" ? "Active" : "Inactive"}
                     </span>
                   </label>
@@ -418,11 +407,7 @@ function CreateCampaignPage() {
             onClick={() => handleSubmit(true)}
             disabled={saving}
           >
-            {saving ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="mr-2 h-4 w-4" />
-            )}
+            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
             Launch Campaign
           </Button>
         </div>
