@@ -14,9 +14,12 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ChatsRouteImport } from './routes/chats'
+import { Route as CampaignsRouteImport } from './routes/campaigns'
 import { Route as BatchesRouteImport } from './routes/batches'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MediaCategoryRouteImport } from './routes/media.$category'
+import { Route as CampaignsNewRouteImport } from './routes/campaigns.new'
+import { Route as CampaignsCampaignIdRouteImport } from './routes/campaigns.$campaignId'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -43,6 +46,11 @@ const ChatsRoute = ChatsRouteImport.update({
   path: '/chats',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CampaignsRoute = CampaignsRouteImport.update({
+  id: '/campaigns',
+  path: '/campaigns',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BatchesRoute = BatchesRouteImport.update({
   id: '/batches',
   path: '/batches',
@@ -58,36 +66,55 @@ const MediaCategoryRoute = MediaCategoryRouteImport.update({
   path: '/$category',
   getParentRoute: () => MediaRoute,
 } as any)
+const CampaignsNewRoute = CampaignsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => CampaignsRoute,
+} as any)
+const CampaignsCampaignIdRoute = CampaignsCampaignIdRouteImport.update({
+  id: '/$campaignId',
+  path: '/$campaignId',
+  getParentRoute: () => CampaignsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
+  '/campaigns': typeof CampaignsRouteWithChildren
   '/chats': typeof ChatsRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
+  '/campaigns/new': typeof CampaignsNewRoute
   '/media/$category': typeof MediaCategoryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
+  '/campaigns': typeof CampaignsRouteWithChildren
   '/chats': typeof ChatsRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
+  '/campaigns/new': typeof CampaignsNewRoute
   '/media/$category': typeof MediaCategoryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
+  '/campaigns': typeof CampaignsRouteWithChildren
   '/chats': typeof ChatsRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
+  '/campaigns/new': typeof CampaignsNewRoute
   '/media/$category': typeof MediaCategoryRoute
 }
 export interface FileRouteTypes {
@@ -95,37 +122,47 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/batches'
+    | '/campaigns'
     | '/chats'
     | '/login'
     | '/media'
     | '/reset-password'
     | '/settings'
+    | '/campaigns/$campaignId'
+    | '/campaigns/new'
     | '/media/$category'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/batches'
+    | '/campaigns'
     | '/chats'
     | '/login'
     | '/media'
     | '/reset-password'
     | '/settings'
+    | '/campaigns/$campaignId'
+    | '/campaigns/new'
     | '/media/$category'
   id:
     | '__root__'
     | '/'
     | '/batches'
+    | '/campaigns'
     | '/chats'
     | '/login'
     | '/media'
     | '/reset-password'
     | '/settings'
+    | '/campaigns/$campaignId'
+    | '/campaigns/new'
     | '/media/$category'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BatchesRoute: typeof BatchesRoute
+  CampaignsRoute: typeof CampaignsRouteWithChildren
   ChatsRoute: typeof ChatsRoute
   LoginRoute: typeof LoginRoute
   MediaRoute: typeof MediaRouteWithChildren
@@ -170,6 +207,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/campaigns': {
+      id: '/campaigns'
+      path: '/campaigns'
+      fullPath: '/campaigns'
+      preLoaderRoute: typeof CampaignsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/batches': {
       id: '/batches'
       path: '/batches'
@@ -191,8 +235,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MediaCategoryRouteImport
       parentRoute: typeof MediaRoute
     }
+    '/campaigns/new': {
+      id: '/campaigns/new'
+      path: '/new'
+      fullPath: '/campaigns/new'
+      preLoaderRoute: typeof CampaignsNewRouteImport
+      parentRoute: typeof CampaignsRoute
+    }
+    '/campaigns/$campaignId': {
+      id: '/campaigns/$campaignId'
+      path: '/$campaignId'
+      fullPath: '/campaigns/$campaignId'
+      preLoaderRoute: typeof CampaignsCampaignIdRouteImport
+      parentRoute: typeof CampaignsRoute
+    }
   }
 }
+
+interface CampaignsRouteChildren {
+  CampaignsCampaignIdRoute: typeof CampaignsCampaignIdRoute
+  CampaignsNewRoute: typeof CampaignsNewRoute
+}
+
+const CampaignsRouteChildren: CampaignsRouteChildren = {
+  CampaignsCampaignIdRoute: CampaignsCampaignIdRoute,
+  CampaignsNewRoute: CampaignsNewRoute,
+}
+
+const CampaignsRouteWithChildren = CampaignsRoute._addFileChildren(
+  CampaignsRouteChildren,
+)
 
 interface MediaRouteChildren {
   MediaCategoryRoute: typeof MediaCategoryRoute
@@ -207,6 +279,7 @@ const MediaRouteWithChildren = MediaRoute._addFileChildren(MediaRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BatchesRoute: BatchesRoute,
+  CampaignsRoute: CampaignsRouteWithChildren,
   ChatsRoute: ChatsRoute,
   LoginRoute: LoginRoute,
   MediaRoute: MediaRouteWithChildren,
