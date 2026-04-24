@@ -18,7 +18,9 @@ import { Route as CampaignsRouteImport } from './routes/campaigns'
 import { Route as BatchesRouteImport } from './routes/batches'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MediaCategoryRouteImport } from './routes/media.$category'
+import { Route as CampaignsSuccessRouteImport } from './routes/campaigns.success'
 import { Route as CampaignsNewRouteImport } from './routes/campaigns.new'
+import { Route as CampaignsFailedRouteImport } from './routes/campaigns.failed'
 import { Route as CampaignsCampaignIdRouteImport } from './routes/campaigns.$campaignId'
 
 const SettingsRoute = SettingsRouteImport.update({
@@ -66,9 +68,19 @@ const MediaCategoryRoute = MediaCategoryRouteImport.update({
   path: '/$category',
   getParentRoute: () => MediaRoute,
 } as any)
+const CampaignsSuccessRoute = CampaignsSuccessRouteImport.update({
+  id: '/success',
+  path: '/success',
+  getParentRoute: () => CampaignsRoute,
+} as any)
 const CampaignsNewRoute = CampaignsNewRouteImport.update({
   id: '/new',
   path: '/new',
+  getParentRoute: () => CampaignsRoute,
+} as any)
+const CampaignsFailedRoute = CampaignsFailedRouteImport.update({
+  id: '/failed',
+  path: '/failed',
   getParentRoute: () => CampaignsRoute,
 } as any)
 const CampaignsCampaignIdRoute = CampaignsCampaignIdRouteImport.update({
@@ -87,7 +99,9 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
+  '/campaigns/failed': typeof CampaignsFailedRoute
   '/campaigns/new': typeof CampaignsNewRoute
+  '/campaigns/success': typeof CampaignsSuccessRoute
   '/media/$category': typeof MediaCategoryRoute
 }
 export interface FileRoutesByTo {
@@ -100,7 +114,9 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
+  '/campaigns/failed': typeof CampaignsFailedRoute
   '/campaigns/new': typeof CampaignsNewRoute
+  '/campaigns/success': typeof CampaignsSuccessRoute
   '/media/$category': typeof MediaCategoryRoute
 }
 export interface FileRoutesById {
@@ -114,7 +130,9 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
+  '/campaigns/failed': typeof CampaignsFailedRoute
   '/campaigns/new': typeof CampaignsNewRoute
+  '/campaigns/success': typeof CampaignsSuccessRoute
   '/media/$category': typeof MediaCategoryRoute
 }
 export interface FileRouteTypes {
@@ -129,7 +147,9 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/campaigns/$campaignId'
+    | '/campaigns/failed'
     | '/campaigns/new'
+    | '/campaigns/success'
     | '/media/$category'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -142,7 +162,9 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/campaigns/$campaignId'
+    | '/campaigns/failed'
     | '/campaigns/new'
+    | '/campaigns/success'
     | '/media/$category'
   id:
     | '__root__'
@@ -155,7 +177,9 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/campaigns/$campaignId'
+    | '/campaigns/failed'
     | '/campaigns/new'
+    | '/campaigns/success'
     | '/media/$category'
   fileRoutesById: FileRoutesById
 }
@@ -235,11 +259,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MediaCategoryRouteImport
       parentRoute: typeof MediaRoute
     }
+    '/campaigns/success': {
+      id: '/campaigns/success'
+      path: '/success'
+      fullPath: '/campaigns/success'
+      preLoaderRoute: typeof CampaignsSuccessRouteImport
+      parentRoute: typeof CampaignsRoute
+    }
     '/campaigns/new': {
       id: '/campaigns/new'
       path: '/new'
       fullPath: '/campaigns/new'
       preLoaderRoute: typeof CampaignsNewRouteImport
+      parentRoute: typeof CampaignsRoute
+    }
+    '/campaigns/failed': {
+      id: '/campaigns/failed'
+      path: '/failed'
+      fullPath: '/campaigns/failed'
+      preLoaderRoute: typeof CampaignsFailedRouteImport
       parentRoute: typeof CampaignsRoute
     }
     '/campaigns/$campaignId': {
@@ -254,12 +292,16 @@ declare module '@tanstack/react-router' {
 
 interface CampaignsRouteChildren {
   CampaignsCampaignIdRoute: typeof CampaignsCampaignIdRoute
+  CampaignsFailedRoute: typeof CampaignsFailedRoute
   CampaignsNewRoute: typeof CampaignsNewRoute
+  CampaignsSuccessRoute: typeof CampaignsSuccessRoute
 }
 
 const CampaignsRouteChildren: CampaignsRouteChildren = {
   CampaignsCampaignIdRoute: CampaignsCampaignIdRoute,
+  CampaignsFailedRoute: CampaignsFailedRoute,
   CampaignsNewRoute: CampaignsNewRoute,
+  CampaignsSuccessRoute: CampaignsSuccessRoute,
 }
 
 const CampaignsRouteWithChildren = CampaignsRoute._addFileChildren(
