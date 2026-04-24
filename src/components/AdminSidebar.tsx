@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/batches", label: "Batches", icon: Upload },
-  { to: "/", label: "Campaigns", icon: Megaphone },
+  { to: "/campaigns", label: "Campaigns", icon: Megaphone },
   { to: "/", label: "Sending Numbers", icon: Phone },
   { to: "/media", label: "Media", icon: ImageIcon },
   { to: "/", label: "FAQs", icon: HelpCircle },
@@ -50,6 +50,7 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
           const isActive =
             (item.label === "Dashboard" && location.pathname === "/") ||
             (item.label === "Batches" && location.pathname === "/batches") ||
+            (item.label === "Campaigns" && location.pathname.startsWith("/campaigns")) ||
             (item.label === "Media" && location.pathname.startsWith("/media")) ||
             (item.label === "Chats" && location.pathname === "/chats") ||
             (item.label === "Settings" && location.pathname === "/settings");
