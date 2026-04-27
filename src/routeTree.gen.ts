@@ -13,11 +13,13 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as FaqsRouteImport } from './routes/faqs'
 import { Route as ChatsRouteImport } from './routes/chats'
 import { Route as BatchesRouteImport } from './routes/batches'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CampaignsIndexRouteImport } from './routes/campaigns.index'
 import { Route as MediaCategoryRouteImport } from './routes/media.$category'
+import { Route as FaqsCategoryRouteImport } from './routes/faqs.$category'
 import { Route as CampaignsSuccessRouteImport } from './routes/campaigns.success'
 import { Route as CampaignsNewRouteImport } from './routes/campaigns.new'
 import { Route as CampaignsFailedRouteImport } from './routes/campaigns.failed'
@@ -41,6 +43,11 @@ const MediaRoute = MediaRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqsRoute = FaqsRouteImport.update({
+  id: '/faqs',
+  path: '/faqs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatsRoute = ChatsRouteImport.update({
@@ -68,6 +75,11 @@ const MediaCategoryRoute = MediaCategoryRouteImport.update({
   path: '/$category',
   getParentRoute: () => MediaRoute,
 } as any)
+const FaqsCategoryRoute = FaqsCategoryRouteImport.update({
+  id: '/$category',
+  path: '/$category',
+  getParentRoute: () => FaqsRoute,
+} as any)
 const CampaignsSuccessRoute = CampaignsSuccessRouteImport.update({
   id: '/campaigns/success',
   path: '/campaigns/success',
@@ -93,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
   '/chats': typeof ChatsRoute
+  '/faqs': typeof FaqsRouteWithChildren
   '/login': typeof LoginRoute
   '/media': typeof MediaRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
@@ -101,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/campaigns/failed': typeof CampaignsFailedRoute
   '/campaigns/new': typeof CampaignsNewRoute
   '/campaigns/success': typeof CampaignsSuccessRoute
+  '/faqs/$category': typeof FaqsCategoryRoute
   '/media/$category': typeof MediaCategoryRoute
   '/campaigns/': typeof CampaignsIndexRoute
 }
@@ -108,6 +122,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
   '/chats': typeof ChatsRoute
+  '/faqs': typeof FaqsRouteWithChildren
   '/login': typeof LoginRoute
   '/media': typeof MediaRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
@@ -116,6 +131,7 @@ export interface FileRoutesByTo {
   '/campaigns/failed': typeof CampaignsFailedRoute
   '/campaigns/new': typeof CampaignsNewRoute
   '/campaigns/success': typeof CampaignsSuccessRoute
+  '/faqs/$category': typeof FaqsCategoryRoute
   '/media/$category': typeof MediaCategoryRoute
   '/campaigns': typeof CampaignsIndexRoute
 }
@@ -124,6 +140,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
   '/chats': typeof ChatsRoute
+  '/faqs': typeof FaqsRouteWithChildren
   '/login': typeof LoginRoute
   '/media': typeof MediaRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
@@ -132,6 +149,7 @@ export interface FileRoutesById {
   '/campaigns/failed': typeof CampaignsFailedRoute
   '/campaigns/new': typeof CampaignsNewRoute
   '/campaigns/success': typeof CampaignsSuccessRoute
+  '/faqs/$category': typeof FaqsCategoryRoute
   '/media/$category': typeof MediaCategoryRoute
   '/campaigns/': typeof CampaignsIndexRoute
 }
@@ -141,6 +159,7 @@ export interface FileRouteTypes {
     | '/'
     | '/batches'
     | '/chats'
+    | '/faqs'
     | '/login'
     | '/media'
     | '/reset-password'
@@ -149,6 +168,7 @@ export interface FileRouteTypes {
     | '/campaigns/failed'
     | '/campaigns/new'
     | '/campaigns/success'
+    | '/faqs/$category'
     | '/media/$category'
     | '/campaigns/'
   fileRoutesByTo: FileRoutesByTo
@@ -156,6 +176,7 @@ export interface FileRouteTypes {
     | '/'
     | '/batches'
     | '/chats'
+    | '/faqs'
     | '/login'
     | '/media'
     | '/reset-password'
@@ -164,6 +185,7 @@ export interface FileRouteTypes {
     | '/campaigns/failed'
     | '/campaigns/new'
     | '/campaigns/success'
+    | '/faqs/$category'
     | '/media/$category'
     | '/campaigns'
   id:
@@ -171,6 +193,7 @@ export interface FileRouteTypes {
     | '/'
     | '/batches'
     | '/chats'
+    | '/faqs'
     | '/login'
     | '/media'
     | '/reset-password'
@@ -179,6 +202,7 @@ export interface FileRouteTypes {
     | '/campaigns/failed'
     | '/campaigns/new'
     | '/campaigns/success'
+    | '/faqs/$category'
     | '/media/$category'
     | '/campaigns/'
   fileRoutesById: FileRoutesById
@@ -187,6 +211,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BatchesRoute: typeof BatchesRoute
   ChatsRoute: typeof ChatsRoute
+  FaqsRoute: typeof FaqsRouteWithChildren
   LoginRoute: typeof LoginRoute
   MediaRoute: typeof MediaRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -228,6 +253,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/faqs': {
+      id: '/faqs'
+      path: '/faqs'
+      fullPath: '/faqs'
+      preLoaderRoute: typeof FaqsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/chats': {
       id: '/chats'
       path: '/chats'
@@ -263,6 +295,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MediaCategoryRouteImport
       parentRoute: typeof MediaRoute
     }
+    '/faqs/$category': {
+      id: '/faqs/$category'
+      path: '/$category'
+      fullPath: '/faqs/$category'
+      preLoaderRoute: typeof FaqsCategoryRouteImport
+      parentRoute: typeof FaqsRoute
+    }
     '/campaigns/success': {
       id: '/campaigns/success'
       path: '/campaigns/success'
@@ -294,6 +333,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface FaqsRouteChildren {
+  FaqsCategoryRoute: typeof FaqsCategoryRoute
+}
+
+const FaqsRouteChildren: FaqsRouteChildren = {
+  FaqsCategoryRoute: FaqsCategoryRoute,
+}
+
+const FaqsRouteWithChildren = FaqsRoute._addFileChildren(FaqsRouteChildren)
+
 interface MediaRouteChildren {
   MediaCategoryRoute: typeof MediaCategoryRoute
 }
@@ -308,6 +357,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BatchesRoute: BatchesRoute,
   ChatsRoute: ChatsRoute,
+  FaqsRoute: FaqsRouteWithChildren,
   LoginRoute: LoginRoute,
   MediaRoute: MediaRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
