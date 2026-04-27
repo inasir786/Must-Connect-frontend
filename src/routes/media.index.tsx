@@ -35,7 +35,7 @@ import {
   MapPin,
 } from "lucide-react";
 
-export const Route = createFileRoute("/media")({
+export const Route = createFileRoute("/media/")({
   head: () => ({
     meta: [
       { title: "Media Categories — MUST Connect" },
