@@ -2,6 +2,17 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { useState } from "react";
 import {
   Select,
   SelectContent,
@@ -18,7 +29,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Upload, Search } from "lucide-react";
+import { Upload, Search, Image as ImageIcon, Video, Link2, UploadCloud } from "lucide-react";
 
 export const Route = createFileRoute("/media/$category")({
   head: ({ params }) => ({
@@ -57,6 +68,8 @@ const tabs = ["Images", "Links", "Videos"] as const;
 function CategoryDetailPage() {
   const { category } = Route.useParams();
   const name = decodeURIComponent(category);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [mediaType, setMediaType] = useState<"image" | "video" | "link">("image");
 
   return (
     <AdminLayout
@@ -68,7 +81,10 @@ function CategoryDetailPage() {
             </h1>
             <p className="text-sm text-muted-foreground">Manage reusable media assets</p>
           </div>
-          <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
+          <Button
+            onClick={() => setUploadOpen(true)}
+            className="bg-accent text-accent-foreground hover:bg-accent/90"
+          >
             <Upload className="h-4 w-4" />
             Upload Media
           </Button>
@@ -175,6 +191,103 @@ function CategoryDetailPage() {
           <Link to="/media">back</Link>
         </div>
       </div>
+
+      {/* Upload Media dialog */}
+      <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload Media</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Add images, videos, or links to your media library
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">Media Type</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { key: "image" as const, label: "Image", Icon: ImageIcon },
+                { key: "video" as const, label: "Video", Icon: Video },
+                { key: "link" as const, label: "Link", Icon: Link2 },
+              ].map(({ key, label, Icon }) => {
+                const active = mediaType === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setMediaType(key)}
+                    className={`flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
+                      active
+                        ? "border-accent bg-accent/10 text-accent"
+                        : "border-border bg-muted hover:bg-muted/70"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {mediaType === "link" ? (
+            <div className="space-y-2">
+              <Label htmlFor="media-url" className="text-sm font-semibold">URL</Label>
+              <Input id="media-url" placeholder="https://example.com" />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/30 px-6 py-8 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                <UploadCloud className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium">Drop files here or click to browse</p>
+              <p className="text-xs text-muted-foreground">
+                {mediaType === "image"
+                  ? "Supports: JPG, PNG, GIF (Max 50MB)"
+                  : "Supports: MP4, MOV (Max 50MB)"}
+              </p>
+              <Button variant="outline" size="sm" className="mt-2">Browse Files</Button>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="media-title" className="text-sm font-semibold">Title</Label>
+            <Input id="media-title" placeholder="Enter media title" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="media-category" className="text-sm font-semibold">Category</Label>
+            <Select>
+              <SelectTrigger id="media-category">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admissions">Admissions</SelectItem>
+                <SelectItem value="events">Events</SelectItem>
+                <SelectItem value="programs">Programs</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="media-desc" className="text-sm font-semibold">Description/Label</Label>
+            <Textarea id="media-desc" placeholder="Add a brief description or label" rows={3} />
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="ghost">Cancel</Button>
+            </DialogClose>
+            <Button
+              onClick={() => setUploadOpen(false)}
+              className="bg-accent text-accent-foreground hover:bg-accent/90"
+            >
+              <Upload className="h-4 w-4" />
+              Upload Media
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
