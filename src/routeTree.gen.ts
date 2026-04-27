@@ -11,11 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as MediaRouteImport } from './routes/media'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ChatsRouteImport } from './routes/chats'
 import { Route as BatchesRouteImport } from './routes/batches'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MediaIndexRouteImport } from './routes/media.index'
 import { Route as FaqsIndexRouteImport } from './routes/faqs.index'
 import { Route as CampaignsIndexRouteImport } from './routes/campaigns.index'
 import { Route as MediaCategoryRouteImport } from './routes/media.$category'
@@ -33,11 +33,6 @@ const SettingsRoute = SettingsRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MediaRoute = MediaRouteImport.update({
-  id: '/media',
-  path: '/media',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -58,6 +53,11 @@ const BatchesRoute = BatchesRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MediaIndexRoute = MediaIndexRouteImport.update({
+  id: '/media/',
+  path: '/media/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqsIndexRoute = FaqsIndexRouteImport.update({
@@ -106,7 +106,6 @@ export interface FileRoutesByFullPath {
   '/batches': typeof BatchesRoute
   '/chats': typeof ChatsRoute
   '/login': typeof LoginRoute
-  '/media': typeof MediaRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
@@ -117,13 +116,13 @@ export interface FileRoutesByFullPath {
   '/media/$category': typeof MediaCategoryRoute
   '/campaigns/': typeof CampaignsIndexRoute
   '/faqs/': typeof FaqsIndexRoute
+  '/media/': typeof MediaIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
   '/chats': typeof ChatsRoute
   '/login': typeof LoginRoute
-  '/media': typeof MediaRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
@@ -134,6 +133,7 @@ export interface FileRoutesByTo {
   '/media/$category': typeof MediaCategoryRoute
   '/campaigns': typeof CampaignsIndexRoute
   '/faqs': typeof FaqsIndexRoute
+  '/media': typeof MediaIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -141,7 +141,6 @@ export interface FileRoutesById {
   '/batches': typeof BatchesRoute
   '/chats': typeof ChatsRoute
   '/login': typeof LoginRoute
-  '/media': typeof MediaRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
@@ -152,6 +151,7 @@ export interface FileRoutesById {
   '/media/$category': typeof MediaCategoryRoute
   '/campaigns/': typeof CampaignsIndexRoute
   '/faqs/': typeof FaqsIndexRoute
+  '/media/': typeof MediaIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -160,7 +160,6 @@ export interface FileRouteTypes {
     | '/batches'
     | '/chats'
     | '/login'
-    | '/media'
     | '/reset-password'
     | '/settings'
     | '/campaigns/$campaignId'
@@ -171,13 +170,13 @@ export interface FileRouteTypes {
     | '/media/$category'
     | '/campaigns/'
     | '/faqs/'
+    | '/media/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/batches'
     | '/chats'
     | '/login'
-    | '/media'
     | '/reset-password'
     | '/settings'
     | '/campaigns/$campaignId'
@@ -188,13 +187,13 @@ export interface FileRouteTypes {
     | '/media/$category'
     | '/campaigns'
     | '/faqs'
+    | '/media'
   id:
     | '__root__'
     | '/'
     | '/batches'
     | '/chats'
     | '/login'
-    | '/media'
     | '/reset-password'
     | '/settings'
     | '/campaigns/$campaignId'
@@ -205,6 +204,7 @@ export interface FileRouteTypes {
     | '/media/$category'
     | '/campaigns/'
     | '/faqs/'
+    | '/media/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -212,7 +212,6 @@ export interface RootRouteChildren {
   BatchesRoute: typeof BatchesRoute
   ChatsRoute: typeof ChatsRoute
   LoginRoute: typeof LoginRoute
-  MediaRoute: typeof MediaRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
   CampaignsCampaignIdRoute: typeof CampaignsCampaignIdRoute
@@ -222,6 +221,7 @@ export interface RootRouteChildren {
   FaqsCategoryRoute: typeof FaqsCategoryRoute
   CampaignsIndexRoute: typeof CampaignsIndexRoute
   FaqsIndexRoute: typeof FaqsIndexRoute
+  MediaIndexRoute: typeof MediaIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -238,13 +238,6 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/media': {
-      id: '/media'
-      path: '/media'
-      fullPath: '/media'
-      preLoaderRoute: typeof MediaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -273,6 +266,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/media/': {
+      id: '/media/'
+      path: '/media'
+      fullPath: '/media/'
+      preLoaderRoute: typeof MediaIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faqs/': {
@@ -334,22 +334,11 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface MediaRouteChildren {
-  MediaCategoryRoute: typeof MediaCategoryRoute
-}
-
-const MediaRouteChildren: MediaRouteChildren = {
-  MediaCategoryRoute: MediaCategoryRoute,
-}
-
-const MediaRouteWithChildren = MediaRoute._addFileChildren(MediaRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BatchesRoute: BatchesRoute,
   ChatsRoute: ChatsRoute,
   LoginRoute: LoginRoute,
-  MediaRoute: MediaRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
   CampaignsCampaignIdRoute: CampaignsCampaignIdRoute,
@@ -359,6 +348,7 @@ const rootRouteChildren: RootRouteChildren = {
   FaqsCategoryRoute: FaqsCategoryRoute,
   CampaignsIndexRoute: CampaignsIndexRoute,
   FaqsIndexRoute: FaqsIndexRoute,
+  MediaIndexRoute: MediaIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
