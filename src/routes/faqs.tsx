@@ -152,18 +152,26 @@ function FaqCategoriesPage() {
                     <Icon className="h-6 w-6" />
                   </div>
                   <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button
-                      onClick={(e) => e.preventDefault()}
-                      className="rounded p-1 text-muted-foreground hover:bg-accent"
+                    <span
+                      role="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      className="rounded p-1 text-muted-foreground hover:bg-accent cursor-pointer"
                     >
                       <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={(e) => e.preventDefault()}
-                      className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-destructive"
+                    </span>
+                    <span
+                      role="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-destructive cursor-pointer"
                     >
                       <Trash2 className="h-4 w-4" />
-                    </button>
+                    </span>
                   </div>
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-foreground">{cat.title}</h3>
