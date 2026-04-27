@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/faqs")({
+export const Route = createFileRoute("/faqs/")({
   head: () => ({
     meta: [
       { title: "FAQ Categories" },
