@@ -33,9 +33,9 @@ export const Route = createFileRoute("/faqs/$category")({
   validateSearch: (search: Record<string, unknown>) => ({
     name: typeof search.name === "string" ? search.name : "",
   }),
-  head: ({ params, search }) => ({
+  head: ({ params }) => ({
     meta: [
-      { title: `FAQs — ${(search as any)?.name || params.category}` },
+      { title: `FAQs — ${params.category}` },
       { name: "description", content: "Manage FAQs for this category." },
     ],
   }),
