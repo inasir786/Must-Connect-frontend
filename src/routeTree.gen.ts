@@ -71,9 +71,9 @@ const CampaignsIndexRoute = CampaignsIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const MediaCategoryRoute = MediaCategoryRouteImport.update({
-  id: '/$category',
-  path: '/$category',
-  getParentRoute: () => MediaRoute,
+  id: '/media/$category',
+  path: '/media/$category',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const FaqsCategoryRoute = FaqsCategoryRouteImport.update({
   id: '/faqs/$category',
@@ -219,6 +219,7 @@ export interface RootRouteChildren {
   CampaignsNewRoute: typeof CampaignsNewRoute
   CampaignsSuccessRoute: typeof CampaignsSuccessRoute
   FaqsCategoryRoute: typeof FaqsCategoryRoute
+  MediaCategoryRoute: typeof MediaCategoryRoute
   CampaignsIndexRoute: typeof CampaignsIndexRoute
   FaqsIndexRoute: typeof FaqsIndexRoute
   MediaIndexRoute: typeof MediaIndexRoute
@@ -291,10 +292,10 @@ declare module '@tanstack/react-router' {
     }
     '/media/$category': {
       id: '/media/$category'
-      path: '/$category'
+      path: '/media/$category'
       fullPath: '/media/$category'
       preLoaderRoute: typeof MediaCategoryRouteImport
-      parentRoute: typeof MediaRoute
+      parentRoute: typeof rootRouteImport
     }
     '/faqs/$category': {
       id: '/faqs/$category'
@@ -346,6 +347,7 @@ const rootRouteChildren: RootRouteChildren = {
   CampaignsNewRoute: CampaignsNewRoute,
   CampaignsSuccessRoute: CampaignsSuccessRoute,
   FaqsCategoryRoute: FaqsCategoryRoute,
+  MediaCategoryRoute: MediaCategoryRoute,
   CampaignsIndexRoute: CampaignsIndexRoute,
   FaqsIndexRoute: FaqsIndexRoute,
   MediaIndexRoute: MediaIndexRoute,

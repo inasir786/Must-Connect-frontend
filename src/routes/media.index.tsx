@@ -11,7 +11,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Plus,
   Pencil,
@@ -33,7 +33,17 @@ import {
   Users,
   Award,
   MapPin,
+  Loader2,
+  Check,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  getMediaCategories,
+  createMediaCategory,
+  updateMediaCategory,
+  deleteMediaCategory,
+  type MediaCategory,
+} from "@/api/media";
 
 export const Route = createFileRoute("/media/")({
   head: () => ({
@@ -45,52 +55,221 @@ export const Route = createFileRoute("/media/")({
   component: MediaPage,
 });
 
-type Category = {
-  name: string;
-  items: number;
-  icon: typeof FlaskConical;
-  color: string; // token-based class for top border + icon
-};
+// ─── Icon registry ─────────────────────────────────────────────────────────────
+// Keys must match the `icon` strings the API returns / accepts
 
-const categories: Category[] = [
-  { name: "Labs", items: 124, icon: FlaskConical, color: "text-chart-1 border-t-chart-1" },
-  { name: "Auditorium", items: 48, icon: Building2, color: "text-chart-2 border-t-chart-2" },
-  { name: "Classes", items: 156, icon: GraduationCap, color: "text-chart-3 border-t-chart-3" },
-  { name: "Faculty", items: 92, icon: UserRound, color: "text-chart-4 border-t-chart-4" },
-  { name: "Events", items: 203, icon: CalendarDays, color: "text-chart-5 border-t-chart-5" },
-  { name: "Facility", items: 87, icon: Building, color: "text-chart-2 border-t-chart-2" },
-  { name: "Cafe", items: 34, icon: Coffee, color: "text-chart-4 border-t-chart-4" },
-  { name: "Parking", items: 21, icon: Car, color: "text-chart-1 border-t-chart-1" },
-  { name: "Library", items: 78, icon: BookOpen, color: "text-chart-2 border-t-chart-2" },
-  { name: "Sports", items: 54, icon: Trophy, color: "text-chart-3 border-t-chart-3" },
-  { name: "Hostel", items: 42, icon: Home, color: "text-chart-5 border-t-chart-5" },
-  { name: "Campus", items: 98, icon: Trees, color: "text-chart-3 border-t-chart-3" },
+const ICON_OPTIONS = [
+  { key: "flask",       Icon: FlaskConical,  color: "text-chart-1" },
+  { key: "building2",   Icon: Building2,     color: "text-chart-2" },
+  { key: "graduation",  Icon: GraduationCap, color: "text-chart-3" },
+  { key: "user",        Icon: UserRound,     color: "text-chart-4" },
+  { key: "calendar",    Icon: CalendarDays,  color: "text-destructive" },
+  { key: "building",    Icon: Building,      color: "text-chart-2" },
+  { key: "coffee",      Icon: Coffee,        color: "text-chart-4" },
+  { key: "car",         Icon: Car,           color: "text-chart-1" },
+  { key: "book",        Icon: BookOpen,      color: "text-chart-2" },
+  { key: "trophy",      Icon: Trophy,        color: "text-chart-3" },
+  { key: "home",        Icon: Home,          color: "text-chart-5" },
+  { key: "trees",       Icon: Trees,         color: "text-chart-3" },
+  { key: "soup",        Icon: Soup,          color: "text-chart-4" },
+  { key: "users",       Icon: Users,         color: "text-chart-3" },
+  { key: "award",       Icon: Award,         color: "text-chart-3" },
+  { key: "school",      Icon: GraduationCap, color: "text-chart-5" },
+  { key: "mappin",      Icon: MapPin,        color: "text-destructive" },
+] as const;
+
+const BORDER_COLORS = [
+  "border-t-blue-500",
+  "border-t-purple-500",
+  "border-t-emerald-500",
+  "border-t-rose-500",
+  "border-t-amber-500",
+  "border-t-cyan-500",
+  "border-t-indigo-500",
+  "border-t-pink-500",
+  "border-t-teal-500",
+  "border-t-orange-500",
+  "border-t-violet-500",
+  "border-t-green-500",
 ];
 
+const TEXT_COLORS = [
+  "text-blue-600",
+  "text-purple-600",
+  "text-emerald-600",
+  "text-rose-600",
+  "text-amber-600",
+  "text-cyan-600",
+  "text-indigo-600",
+  "text-pink-600",
+  "text-teal-600",
+  "text-orange-600",
+  "text-violet-600",
+  "text-green-600",
+];
+
+function getIconEntry(key: string) {
+  return ICON_OPTIONS.find((i) => i.key === key) ?? ICON_OPTIONS[0];
+}
+
+function getBorderColor(index: number) {
+  return BORDER_COLORS[index % BORDER_COLORS.length];
+}
+
+function getTextColor(index: number) {
+  return TEXT_COLORS[index % TEXT_COLORS.length];
+}
+
+// ─── Icon Picker ──────────────────────────────────────────────────────────────
+
+function IconPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (key: string) => void;
+}) {
+  return (
+    <div className="grid grid-cols-6 gap-2">
+      {ICON_OPTIONS.map(({ key, Icon, color }) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => onChange(key)}
+          className={cn(
+            "flex h-10 w-full items-center justify-center rounded-md border transition-colors",
+            value === key
+              ? "border-accent bg-accent/10"
+              : "border-border bg-muted hover:bg-muted/70",
+          )}
+          aria-label={key}
+        >
+          <Icon className={cn("h-5 w-5", color)} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 function MediaPage() {
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [selectedIcon, setSelectedIcon] = useState("FlaskConical");
+  const [categories, setCategories] = useState<MediaCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const iconOptions = [
-    { name: "FlaskConical", Icon: FlaskConical, color: "text-chart-1" },
-    { name: "Building2", Icon: Building2, color: "text-chart-2" },
-    { name: "GraduationCap", Icon: GraduationCap, color: "text-chart-3" },
-    { name: "UserRound", Icon: UserRound, color: "text-chart-4" },
-    { name: "CalendarDays", Icon: CalendarDays, color: "text-destructive" },
-    { name: "Building", Icon: Building, color: "text-chart-2" },
-    { name: "Coffee", Icon: Coffee, color: "text-chart-4" },
-    { name: "Car", Icon: Car, color: "text-chart-1" },
-    { name: "BookOpen", Icon: BookOpen, color: "text-chart-2" },
-    { name: "Trophy", Icon: Trophy, color: "text-chart-3" },
-    { name: "Home", Icon: Home, color: "text-chart-5" },
-    { name: "Trees", Icon: Trees, color: "text-chart-3" },
-    { name: "Soup", Icon: Soup, color: "text-chart-4" },
-    { name: "Users", Icon: Users, color: "text-chart-3" },
-    { name: "Award", Icon: Award, color: "text-chart-3" },
-    { name: "MapPin", Icon: MapPin, color: "text-destructive" },
-  ];
+  // Create dialog
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newIcon, setNewIcon] = useState("building");
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
+  // Edit dialog
+  const [editTarget, setEditTarget] = useState<MediaCategory | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editIcon, setEditIcon] = useState("building");
+  const [updating, setUpdating] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  // ── Fetch ──────────────────────────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const data = await getMediaCategories();
+        if (!cancelled) setCategories(data);
+      } catch {
+        if (!cancelled) setError("Failed to load categories. Please try again.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  // ── Create ─────────────────────────────────────────────────────────────
+  const handleCreate = async () => {
+    if (!newTitle.trim()) return;
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const created = await createMediaCategory({
+        title: newTitle.trim(),
+        icon: newIcon,
+      });
+      setCategories((prev) => [...prev, created]);
+      setNewTitle("");
+      setNewIcon("building");
+      setCreateOpen(false);
+    } catch {
+      setCreateError("Failed to create category. Please try again.");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  // ── Edit helpers ────────────────────────────────────────────────────────
+  const openEdit = (e: React.MouseEvent, cat: MediaCategory) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditTarget(cat);
+    setEditTitle(cat.title);
+    setEditIcon(cat.icon);
+    setEditError(null);
+  };
+
+  const handleUpdate = async () => {
+    if (!editTarget || !editTitle.trim()) return;
+    setUpdating(true);
+    setEditError(null);
+
+    // Optimistic update
+    const optimistic: MediaCategory = {
+      ...editTarget,
+      title: editTitle.trim(),
+      icon: editIcon,
+    };
+    setCategories((prev) =>
+      prev.map((c) => (c.id === editTarget.id ? optimistic : c))
+    );
+    setEditTarget(null);
+
+    try {
+      const updated = await updateMediaCategory(editTarget.id, {
+        title: editTitle.trim(),
+        icon: editIcon,
+      });
+      setCategories((prev) =>
+        prev.map((c) => (c.id === updated.id ? updated : c))
+      );
+    } catch {
+      // Rollback
+      setCategories((prev) =>
+        prev.map((c) => (c.id === editTarget.id ? editTarget : c))
+      );
+      setEditTarget(editTarget);
+      setEditError("Failed to update category. Please try again.");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // ── Delete ──────────────────────────────────────────────────────────────
+  const handleDelete = async (e: React.MouseEvent, id: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm("Delete this category?")) return;
+    try {
+      await deleteMediaCategory(id);
+      setCategories((prev) => prev.filter((c) => c.id !== id));
+    } catch {
+      alert("Failed to delete category. Please try again.");
+    }
+  };
+
+  // ── Render ──────────────────────────────────────────────────────────────
   return (
     <AdminLayout
       header={
@@ -102,7 +281,7 @@ function MediaPage() {
             </p>
           </div>
           <Button
-            onClick={() => setOpen(true)}
+            onClick={() => setCreateOpen(true)}
             className="bg-accent text-accent-foreground hover:bg-accent/90"
           >
             <Plus className="h-4 w-4" />
@@ -113,110 +292,169 @@ function MediaPage() {
     >
       <div className="mx-auto max-w-7xl space-y-6">
 
+        {/* Loading */}
+        {loading && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading categories…
+          </div>
+        )}
+
+        {/* Error */}
+        {error && !loading && (
+          <p className="text-sm text-destructive">{error}</p>
+        )}
+
         {/* Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {categories.map((c) => {
-            const Icon = c.icon;
-            return (
-              <div
-                key={c.name}
-                className={`group relative rounded-xl border border-t-4 border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md ${c.color}`}
-              >
-                <Link
-                  to="/media/$category"
-                  params={{ category: c.name }}
-                  className="absolute inset-0 z-0 rounded-xl"
-                  aria-label={`Open ${c.name}`}
-                />
-                <div className="relative z-10 flex items-start justify-between pointer-events-none">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg bg-muted ${c.color.split(" ")[0]}`}>
-                    <Icon className="h-5 w-5" />
+        {!loading && !error && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {categories.map((cat, index) => {
+              const { Icon, color } = getIconEntry(cat.icon);
+              const borderColor = getBorderColor(index);
+              const textColor = getTextColor(index);
+
+              return (
+                <div
+                  key={cat.id}
+                  className={cn(
+                    "group relative rounded-xl border border-t-4 border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md",
+                    borderColor,
+                  )}
+                >
+                  <Link
+                    to="/media/$category"
+                    params={{ category: String(cat.id) }}
+                    search={{ name: cat.title }}
+                    className="absolute inset-0 z-0 rounded-xl"
+                    aria-label={`Open ${cat.title}`}
+                  />
+                  <div className="relative z-10 flex items-start justify-between pointer-events-none">
+                    <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg bg-muted", color)}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="flex items-center gap-1 opacity-60 transition-opacity group-hover:opacity-100 pointer-events-auto">
+                      <button
+                        type="button"
+                        onClick={(e) => openEdit(e, cat)}
+                        className="rounded p-1.5 hover:bg-muted"
+                        aria-label="Edit"
+                      >
+                        <Pencil className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDelete(e, cat.id)}
+                        className="rounded p-1.5 hover:bg-muted"
+                        aria-label="Delete"
+                      >
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 opacity-60 transition-opacity group-hover:opacity-100 pointer-events-auto">
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      className="rounded p-1.5 hover:bg-muted"
-                      aria-label="Edit"
-                    >
-                      <Pencil className="h-4 w-4 text-muted-foreground" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      className="rounded p-1.5 hover:bg-muted"
-                      aria-label="Delete"
-                    >
-                      <Trash2 className="h-4 w-4 text-muted-foreground" />
-                    </button>
+                  <div className="relative z-10 mt-3 pointer-events-none">
+                    <p className={cn("text-base font-semibold", textColor)}>{cat.title}</p>
+                    <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <ImageIcon className="h-3.5 w-3.5" />
+                      <span>{cat.asset_count} items</span>
+                    </div>
                   </div>
                 </div>
-                <div className="relative z-10 mt-3 pointer-events-none">
-                  <p className={`text-base font-semibold ${c.color.split(" ")[0]}`}>{c.name}</p>
-                  <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <ImageIcon className="h-3.5 w-3.5" />
-                    <span>{c.items} items</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+
+            {categories.length === 0 && (
+              <p className="col-span-full text-sm text-muted-foreground">
+                No categories yet. Click "Add Category" to create one.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Add Category dialog */}
-      <Dialog open={open} onOpenChange={setOpen}>
+      {/* ── Create Dialog ── */}
+      <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); setCreateError(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Category</DialogTitle>
           </DialogHeader>
-
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold text-primary">Select Icon</Label>
-            <div className="grid grid-cols-6 gap-2">
-              {iconOptions.map(({ name, Icon, color }) => {
-                const active = selectedIcon === name;
-                return (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => setSelectedIcon(name)}
-                    className={`flex h-10 w-full items-center justify-center rounded-md border transition-colors ${
-                      active
-                        ? "border-accent bg-accent/10"
-                        : "border-border bg-muted hover:bg-muted/70"
-                    }`}
-                    aria-label={name}
-                  >
-                    <Icon className={`h-5 w-5 ${color}`} />
-                  </button>
-                );
-              })}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-primary">Select Icon</Label>
+              <IconPicker value={newIcon} onChange={setNewIcon} />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="create-title" className="text-sm font-semibold">
+                Category Title
+              </Label>
+              <Input
+                id="create-title"
+                placeholder="Enter category name"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+              />
+            </div>
+            {createError && (
+              <p className="text-xs font-medium text-destructive">{createError}</p>
+            )}
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="category-title" className="text-sm font-semibold">
-              Category Title
-            </Label>
-            <Input
-              id="category-title"
-              placeholder="Enter category name"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
-
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="ghost">Cancel</Button>
+              <Button variant="ghost" disabled={creating}>Cancel</Button>
             </DialogClose>
             <Button
-              onClick={() => setOpen(false)}
-              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              onClick={handleCreate}
+              disabled={creating || !newTitle.trim()}
+              className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
             >
-              <Plus className="h-4 w-4" />
-              Create Category
+              {creating
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <Check className="h-4 w-4" />}
+              {creating ? "Creating…" : "Create Category"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Edit Dialog ── */}
+      <Dialog open={!!editTarget} onOpenChange={(v) => { if (!v) setEditTarget(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Category</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-primary">Select Icon</Label>
+              <IconPicker value={editIcon} onChange={setEditIcon} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-title" className="text-sm font-semibold">
+                Category Title
+              </Label>
+              <Input
+                id="edit-title"
+                placeholder="Enter category name"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleUpdate()}
+              />
+            </div>
+            {editError && (
+              <p className="text-xs font-medium text-destructive">{editError}</p>
+            )}
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="ghost" disabled={updating}>Cancel</Button>
+            </DialogClose>
+            <Button
+              onClick={handleUpdate}
+              disabled={updating || !editTitle.trim()}
+              className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+            >
+              {updating
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <Check className="h-4 w-4" />}
+              {updating ? "Saving…" : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
