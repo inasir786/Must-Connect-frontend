@@ -48,3 +48,62 @@ export const updateMediaCategory = async (
 export const deleteMediaCategory = async (id: number): Promise<void> => {
   await client.delete(`/media/categories/${id}`);
 };
+
+// ─── Asset Types ──────────────────────────────────────────────────────────────
+
+export type MediaAssetType = "image" | "video" | "link";
+
+export interface MediaAsset {
+  id: number;
+  category_id: number;
+  type: MediaAssetType;
+  file_url: string | null;
+  title: string;
+  label: string;
+  description: string;
+  file_size: number | null;
+  created_at: string;
+}
+
+export interface MediaAssetListResponse {
+  items: MediaAsset[];
+  meta: {
+    total: number;
+    page: number;
+    per_page: number;
+    total_pages: number;
+  };
+}
+
+// ─── Asset Endpoints ──────────────────────────────────────────────────────────
+
+/** GET /media/assets?category_id=&page=&per_page= — paginated assets */
+export const getMediaAssets = async (
+  categoryId: number,
+  page = 1,
+  perPage = 10
+): Promise<MediaAssetListResponse> => {
+  const { data } = await client.get("/media/assets", {
+    params: { category_id: categoryId, page, per_page: perPage },
+  });
+  return data;
+};
+
+/**
+ * POST /media/assets — create a new asset.
+ * Uses multipart/form-data so file uploads work.
+ * For link type, pass file_url instead of file.
+ */
+export const createMediaAsset = async (
+  payload: FormData
+): Promise<MediaAsset> => {
+  const { data } = await client.post("/media/assets", payload, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+};
+
+/** DELETE /media/assets/:id — delete an asset */
+export const deleteMediaAsset = async (id: number): Promise<void> => {
+  await client.delete(`/media/assets/${id}`);
+};
