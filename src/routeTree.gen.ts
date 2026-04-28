@@ -13,6 +13,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ChatsRouteImport } from './routes/chats'
+import { Route as CampaignMediaRouteImport } from './routes/campaign-media'
 import { Route as BatchesRouteImport } from './routes/batches'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MediaIndexRouteImport } from './routes/media.index'
@@ -43,6 +44,11 @@ const LoginRoute = LoginRouteImport.update({
 const ChatsRoute = ChatsRouteImport.update({
   id: '/chats',
   path: '/chats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CampaignMediaRoute = CampaignMediaRouteImport.update({
+  id: '/campaign-media',
+  path: '/campaign-media',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BatchesRoute = BatchesRouteImport.update({
@@ -104,6 +110,7 @@ const CampaignsCampaignIdRoute = CampaignsCampaignIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
+  '/campaign-media': typeof CampaignMediaRoute
   '/chats': typeof ChatsRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
+  '/campaign-media': typeof CampaignMediaRoute
   '/chats': typeof ChatsRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
+  '/campaign-media': typeof CampaignMediaRoute
   '/chats': typeof ChatsRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/batches'
+    | '/campaign-media'
     | '/chats'
     | '/login'
     | '/reset-password'
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/batches'
+    | '/campaign-media'
     | '/chats'
     | '/login'
     | '/reset-password'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/batches'
+    | '/campaign-media'
     | '/chats'
     | '/login'
     | '/reset-password'
@@ -210,6 +222,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BatchesRoute: typeof BatchesRoute
+  CampaignMediaRoute: typeof CampaignMediaRoute
   ChatsRoute: typeof ChatsRoute
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -253,6 +266,13 @@ declare module '@tanstack/react-router' {
       path: '/chats'
       fullPath: '/chats'
       preLoaderRoute: typeof ChatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/campaign-media': {
+      id: '/campaign-media'
+      path: '/campaign-media'
+      fullPath: '/campaign-media'
+      preLoaderRoute: typeof CampaignMediaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/batches': {
@@ -338,6 +358,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BatchesRoute: BatchesRoute,
+  CampaignMediaRoute: CampaignMediaRoute,
   ChatsRoute: ChatsRoute,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
