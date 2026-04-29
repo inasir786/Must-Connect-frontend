@@ -23,6 +23,7 @@ import { Route as CampaignsIndexRouteImport } from './routes/campaigns.index'
 import { Route as MediaCategoryRouteImport } from './routes/media.$category'
 import { Route as FaqsCategoryRouteImport } from './routes/faqs.$category'
 import { Route as ChatsHighlyEngagedRouteImport } from './routes/chats.highly-engaged'
+import { Route as ChatsFeeInquiryRouteImport } from './routes/chats.fee-inquiry'
 import { Route as CampaignsSuccessRouteImport } from './routes/campaigns.success'
 import { Route as CampaignsNewRouteImport } from './routes/campaigns.new'
 import { Route as CampaignsFailedRouteImport } from './routes/campaigns.failed'
@@ -98,6 +99,11 @@ const ChatsHighlyEngagedRoute = ChatsHighlyEngagedRouteImport.update({
   path: '/highly-engaged',
   getParentRoute: () => ChatsRoute,
 } as any)
+const ChatsFeeInquiryRoute = ChatsFeeInquiryRouteImport.update({
+  id: '/fee-inquiry',
+  path: '/fee-inquiry',
+  getParentRoute: () => ChatsRoute,
+} as any)
 const CampaignsSuccessRoute = CampaignsSuccessRouteImport.update({
   id: '/campaigns/success',
   path: '/campaigns/success',
@@ -132,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/campaigns/failed': typeof CampaignsFailedRoute
   '/campaigns/new': typeof CampaignsNewRoute
   '/campaigns/success': typeof CampaignsSuccessRoute
+  '/chats/fee-inquiry': typeof ChatsFeeInquiryRoute
   '/chats/highly-engaged': typeof ChatsHighlyEngagedRoute
   '/faqs/$category': typeof FaqsCategoryRoute
   '/media/$category': typeof MediaCategoryRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/campaigns/failed': typeof CampaignsFailedRoute
   '/campaigns/new': typeof CampaignsNewRoute
   '/campaigns/success': typeof CampaignsSuccessRoute
+  '/chats/fee-inquiry': typeof ChatsFeeInquiryRoute
   '/chats/highly-engaged': typeof ChatsHighlyEngagedRoute
   '/faqs/$category': typeof FaqsCategoryRoute
   '/media/$category': typeof MediaCategoryRoute
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/campaigns/failed': typeof CampaignsFailedRoute
   '/campaigns/new': typeof CampaignsNewRoute
   '/campaigns/success': typeof CampaignsSuccessRoute
+  '/chats/fee-inquiry': typeof ChatsFeeInquiryRoute
   '/chats/highly-engaged': typeof ChatsHighlyEngagedRoute
   '/faqs/$category': typeof FaqsCategoryRoute
   '/media/$category': typeof MediaCategoryRoute
@@ -195,6 +204,7 @@ export interface FileRouteTypes {
     | '/campaigns/failed'
     | '/campaigns/new'
     | '/campaigns/success'
+    | '/chats/fee-inquiry'
     | '/chats/highly-engaged'
     | '/faqs/$category'
     | '/media/$category'
@@ -215,6 +225,7 @@ export interface FileRouteTypes {
     | '/campaigns/failed'
     | '/campaigns/new'
     | '/campaigns/success'
+    | '/chats/fee-inquiry'
     | '/chats/highly-engaged'
     | '/faqs/$category'
     | '/media/$category'
@@ -235,6 +246,7 @@ export interface FileRouteTypes {
     | '/campaigns/failed'
     | '/campaigns/new'
     | '/campaigns/success'
+    | '/chats/fee-inquiry'
     | '/chats/highly-engaged'
     | '/faqs/$category'
     | '/media/$category'
@@ -363,6 +375,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatsHighlyEngagedRouteImport
       parentRoute: typeof ChatsRoute
     }
+    '/chats/fee-inquiry': {
+      id: '/chats/fee-inquiry'
+      path: '/fee-inquiry'
+      fullPath: '/chats/fee-inquiry'
+      preLoaderRoute: typeof ChatsFeeInquiryRouteImport
+      parentRoute: typeof ChatsRoute
+    }
     '/campaigns/success': {
       id: '/campaigns/success'
       path: '/campaigns/success'
@@ -395,10 +414,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface ChatsRouteChildren {
+  ChatsFeeInquiryRoute: typeof ChatsFeeInquiryRoute
   ChatsHighlyEngagedRoute: typeof ChatsHighlyEngagedRoute
 }
 
 const ChatsRouteChildren: ChatsRouteChildren = {
+  ChatsFeeInquiryRoute: ChatsFeeInquiryRoute,
   ChatsHighlyEngagedRoute: ChatsHighlyEngagedRoute,
 }
 
