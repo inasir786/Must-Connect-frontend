@@ -44,9 +44,9 @@ export const Route = createFileRoute("/media/$category")({
   validateSearch: (search: Record<string, unknown>) => ({
     name: typeof search.name === "string" ? search.name : "",
   }),
-  head: ({ params, search }) => ({
+  head: ({ params }) => ({
     meta: [
-      { title: `Media Library — ${(search as any)?.name || params.category}` },
+      { title: `Media Library — ${params.category}` },
       { name: "description", content: "Manage reusable media assets." },
     ],
   }),

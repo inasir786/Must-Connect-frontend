@@ -3,7 +3,7 @@ import {
   LayoutDashboard,
   Upload,
   Megaphone,
-  Phone,
+  CalendarCheck,
   Image as ImageIcon,
   HelpCircle,
   MessageSquare,
@@ -18,7 +18,7 @@ const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/batches", label: "Batches", icon: Upload },
   { to: "/campaigns", label: "Campaigns", icon: Megaphone },
-  { to: "/", label: "Sending Numbers", icon: Phone },
+  { to: "/visits", label: "Visits", icon: CalendarCheck },
   { to: "/media", label: "Media", icon: ImageIcon },
   { to: "/campaign-media", label: "Campaign Media", icon: MegaphoneIcon },
   { to: "/faqs", label: "FAQs", icon: HelpCircle },
@@ -53,6 +53,7 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
             (item.label === "Dashboard" && location.pathname === "/") ||
             (item.label === "Batches" && location.pathname === "/batches") ||
             (item.label === "Campaigns" && location.pathname.startsWith("/campaigns")) ||
+            (item.label === "Visits" && location.pathname.startsWith("/visits")) ||
             (item.label === "Media" && location.pathname.startsWith("/media")) ||
             (item.label === "Campaign Media" && location.pathname.startsWith("/campaign-media")) ||
             (item.label === "FAQs" && location.pathname.startsWith("/faqs")) ||

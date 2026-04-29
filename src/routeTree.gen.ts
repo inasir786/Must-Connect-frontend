@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VisitsRouteImport } from './routes/visits'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
@@ -26,6 +27,11 @@ import { Route as CampaignsNewRouteImport } from './routes/campaigns.new'
 import { Route as CampaignsFailedRouteImport } from './routes/campaigns.failed'
 import { Route as CampaignsCampaignIdRouteImport } from './routes/campaigns.$campaignId'
 
+const VisitsRoute = VisitsRouteImport.update({
+  id: '/visits',
+  path: '/visits',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/visits': typeof VisitsRoute
   '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
   '/campaigns/failed': typeof CampaignsFailedRoute
   '/campaigns/new': typeof CampaignsNewRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/visits': typeof VisitsRoute
   '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
   '/campaigns/failed': typeof CampaignsFailedRoute
   '/campaigns/new': typeof CampaignsNewRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/visits': typeof VisitsRoute
   '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
   '/campaigns/failed': typeof CampaignsFailedRoute
   '/campaigns/new': typeof CampaignsNewRoute
@@ -172,6 +181,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/settings'
+    | '/visits'
     | '/campaigns/$campaignId'
     | '/campaigns/failed'
     | '/campaigns/new'
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/settings'
+    | '/visits'
     | '/campaigns/$campaignId'
     | '/campaigns/failed'
     | '/campaigns/new'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/settings'
+    | '/visits'
     | '/campaigns/$campaignId'
     | '/campaigns/failed'
     | '/campaigns/new'
@@ -227,6 +239,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
+  VisitsRoute: typeof VisitsRoute
   CampaignsCampaignIdRoute: typeof CampaignsCampaignIdRoute
   CampaignsFailedRoute: typeof CampaignsFailedRoute
   CampaignsNewRoute: typeof CampaignsNewRoute
@@ -240,6 +253,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/visits': {
+      id: '/visits'
+      path: '/visits'
+      fullPath: '/visits'
+      preLoaderRoute: typeof VisitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -363,6 +383,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
+  VisitsRoute: VisitsRoute,
   CampaignsCampaignIdRoute: CampaignsCampaignIdRoute,
   CampaignsFailedRoute: CampaignsFailedRoute,
   CampaignsNewRoute: CampaignsNewRoute,
