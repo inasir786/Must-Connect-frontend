@@ -49,14 +49,6 @@ const AVATAR_COLORS = [
 
 // ─── Status Select ─────────────────────────────────────────────────────────────
 
-const STATUS_SELECT_CLASSES: Record<VisitStatus, string> = {
-  pending:
-    "px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-semibold border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-200 transition-all appearance-none pr-7 cursor-pointer",
-  done: "px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-semibold border border-green-200 focus:outline-none focus:ring-2 focus:ring-green-200 transition-all appearance-none pr-7 cursor-pointer",
-  missed:
-    "px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-semibold border border-red-200 focus:outline-none focus:ring-2 focus:ring-red-200 transition-all appearance-none pr-7 cursor-pointer",
-};
-
 function StatusSelect({
   visit,
   onUpdate,
@@ -69,17 +61,29 @@ function StatusSelect({
 
   async function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const next = e.target.value as VisitStatus;
-    if (next === "pending" || next === current) return; // API only accepts done/missed
+    if (next === current) return;
+    if (next === "pending") return; // API only accepts done/missed
+
+    const prev = current;
     setLoading(true);
     setCurrent(next); // optimistic
+
     try {
       await onUpdate(visit.id, next as "done" | "missed");
     } catch {
-      setCurrent(current); // revert on error
+      setCurrent(prev); // revert on error
     } finally {
       setLoading(false);
     }
   }
+
+  const colorMap: Record<VisitStatus, { bg: string; text: string; border: string; ring: string; chevron: string }> = {
+    pending: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", ring: "focus:ring-amber-200", chevron: "#b45309" },
+    done: { bg: "bg-green-50", text: "text-green-700", border: "border-green-200", ring: "focus:ring-green-200", chevron: "#15803d" },
+    missed: { bg: "bg-red-50", text: "text-red-700", border: "border-red-200", ring: "focus:ring-red-200", chevron: "#b91c1c" },
+  };
+
+  const c = colorMap[current];
 
   return (
     <div className="relative inline-flex items-center">
@@ -87,25 +91,24 @@ function StatusSelect({
         value={current}
         onChange={handleChange}
         disabled={loading}
-        className={STATUS_SELECT_CLASSES[current]}
+        className={[
+          "appearance-none rounded-lg border px-3 py-1.5 pr-7",
+          "text-xs font-semibold focus:outline-none focus:ring-2 transition-all cursor-pointer",
+          c.bg, c.text, c.border, c.ring,
+          loading ? "opacity-50 cursor-not-allowed" : "",
+        ].join(" ")}
       >
         <option value="pending">Pending</option>
         <option value="done">Done</option>
         <option value="missed">Missed</option>
       </select>
-      {/* Custom chevron */}
-      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
-        {loading ? (
+
+      {/* Loading spinner inside select */}
+      {loading ? (
+        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
           <svg
             className="h-3 w-3 animate-spin"
-            style={{
-              color:
-                current === "pending"
-                  ? "#b45309"
-                  : current === "done"
-                  ? "#15803d"
-                  : "#b91c1c",
-            }}
+            style={{ color: c.chevron }}
             fill="none"
             viewBox="0 0 24 24"
           >
@@ -123,30 +126,21 @@ function StatusSelect({
               d="M4 12a8 8 0 018-8v8z"
             />
           </svg>
-        ) : (
+        </span>
+      ) : (
+        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
           <svg
             className="h-3 w-3"
-            style={{
-              color:
-                current === "pending"
-                  ? "#b45309"
-                  : current === "done"
-                  ? "#15803d"
-                  : "#b91c1c",
-            }}
+            style={{ color: c.chevron }}
             fill="none"
             stroke="currentColor"
             strokeWidth={2.5}
             viewBox="0 0 24 24"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M19 9l-7 7-7-7"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
-        )}
-      </span>
+        </span>
+      )}
     </div>
   );
 }
@@ -156,7 +150,7 @@ function StatusSelect({
 function Avatar({ name, index }: { name: string; index: number }) {
   return (
     <div
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-slate-700"
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-slate-700"
       style={{ backgroundColor: AVATAR_COLORS[index % AVATAR_COLORS.length] }}
     >
       {initials(name)}
@@ -275,6 +269,8 @@ function VisitsPage() {
 
   // ── Stats ──────────────────────────────────────────────────────────────
   const pendingCount = visits.filter((v) => v.status === "pending").length;
+  const doneCount = visits.filter((v) => v.status === "done").length;
+  const missedCount = visits.filter((v) => v.status === "missed").length;
 
   // ── Pagination ─────────────────────────────────────────────────────────
   const pageNumbers = useMemo(() => {
@@ -312,17 +308,17 @@ function VisitsPage() {
       }
     >
       <main className="max-w-[1400px] px-0">
-        {/* ── Stats ── */}
-        <section className="mb-8 grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
+        {/* ── Stats - Smaller cards ── */}
+        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
           {/* Total Visits */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-3 flex items-center justify-between">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-2 flex items-center justify-between">
               <div
-                className="flex h-12 w-12 items-center justify-center rounded-xl"
+                className="flex h-10 w-10 items-center justify-center rounded-xl"
                 style={{ backgroundColor: "#eff6ff" }}
               >
                 <svg
-                  className="h-6 w-6"
+                  className="h-5 w-5"
                   style={{ color: "#003d82" }}
                   fill="none"
                   stroke="currentColor"
@@ -336,21 +332,21 @@ function VisitsPage() {
                 </svg>
               </div>
             </div>
-            <h3 className="mb-1 text-sm font-medium text-slate-500">
+            <h3 className="mb-1 text-xs font-medium text-slate-500">
               Total Visits
             </h3>
-            <p className="text-3xl font-bold text-slate-900">{meta.total}</p>
+            <p className="text-2xl font-bold text-slate-900">{meta.total}</p>
           </div>
 
           {/* Pending */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-3 flex items-center justify-between">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-2 flex items-center justify-between">
               <div
-                className="flex h-12 w-12 items-center justify-center rounded-xl"
+                className="flex h-10 w-10 items-center justify-center rounded-xl"
                 style={{ backgroundColor: "#fffbeb" }}
               >
                 <svg
-                  className="h-6 w-6 text-amber-600"
+                  className="h-5 w-5 text-amber-600"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth={1.8}
@@ -361,23 +357,73 @@ function VisitsPage() {
                 </svg>
               </div>
             </div>
-            <h3 className="mb-1 text-sm font-medium text-slate-500">Pending</h3>
-            <p className="text-3xl font-bold text-slate-900">{pendingCount}</p>
+            <h3 className="mb-1 text-xs font-medium text-slate-500">Pending</h3>
+            <p className="text-2xl font-bold text-slate-900">{pendingCount}</p>
+          </div>
+
+          {/* Done */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-2 flex items-center justify-between">
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{ backgroundColor: "#f0fdf4" }}
+              >
+                <svg
+                  className="h-5 w-5 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+            </div>
+            <h3 className="mb-1 text-xs font-medium text-slate-500">Done</h3>
+            <p className="text-2xl font-bold text-slate-900">{doneCount}</p>
+          </div>
+
+          {/* Missed */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-2 flex items-center justify-between">
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{ backgroundColor: "#fef2f2" }}
+              >
+                <svg
+                  className="h-5 w-5 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  viewBox="0 0 24 24"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="mb-1 text-xs font-medium text-slate-500">Missed</h3>
+            <p className="text-2xl font-bold text-slate-900">{missedCount}</p>
           </div>
         </section>
 
         {/* ── Table Section ── */}
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           {/* Header */}
-          <div className="flex flex-col gap-3 border-b border-slate-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">
+          <div className="flex flex-col gap-3 border-b border-slate-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-base font-semibold text-slate-900">
               Visit Schedule
             </h2>
             <div className="flex items-center gap-3">
               <select
                 value={statusFilter}
                 onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 focus:border-[#003d82] focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-[#003d82] focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
               >
                 <option>All Status</option>
                 <option>Pending</option>
@@ -387,7 +433,7 @@ function VisitsPage() {
               <select
                 value={dateFilter}
                 onChange={(e) => { setDateFilter(e.target.value); setPage(1); }}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 focus:border-[#003d82] focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-[#003d82] focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
               >
                 <option>All Dates</option>
                 <option>Today</option>
@@ -406,7 +452,7 @@ function VisitsPage() {
                     (h) => (
                       <th
                         key={h}
-                        className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                        className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
                       >
                         {h}
                       </th>
@@ -467,7 +513,7 @@ function VisitsPage() {
                       className="transition-colors hover:bg-slate-50"
                     >
                       {/* Name */}
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-3">
                         <div className="flex items-center gap-3">
                           <Avatar name={v.student_name} index={i} />
                           <span className="text-sm font-medium text-slate-900">
@@ -477,22 +523,22 @@ function VisitsPage() {
                       </td>
 
                       {/* Number */}
-                      <td className="px-6 py-4 text-sm text-slate-600">
+                      <td className="px-6 py-3 text-sm text-slate-600">
                         {v.phone_number}
                       </td>
 
                       {/* Date */}
-                      <td className="px-6 py-4 text-sm text-slate-600">
+                      <td className="px-6 py-3 text-sm text-slate-600">
                         {formatDate(v.visit_date)}
                       </td>
 
                       {/* Time */}
-                      <td className="px-6 py-4 text-sm text-slate-600">
+                      <td className="px-6 py-3 text-sm text-slate-600">
                         {formatTime(v.visit_time)}
                       </td>
 
                       {/* Status */}
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-3">
                         <StatusSelect visit={v} onUpdate={handleStatusUpdate} />
                       </td>
                     </tr>
@@ -516,7 +562,7 @@ function VisitsPage() {
               <button
                 disabled={page <= 1 || loading}
                 onClick={() => setPage((p) => p - 1)}
-                className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <svg
                   className="h-4 w-4"
@@ -544,7 +590,7 @@ function VisitsPage() {
                     key={p}
                     onClick={() => setPage(p as number)}
                     disabled={loading}
-                    className="rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-40"
+                    className="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-40"
                     style={
                       p === page
                         ? { backgroundColor: "#003d82", color: "#fff" }
@@ -559,7 +605,7 @@ function VisitsPage() {
               <button
                 disabled={page >= meta.total_pages || loading}
                 onClick={() => setPage((p) => p + 1)}
-                className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Next
                 <svg
