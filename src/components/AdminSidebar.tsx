@@ -34,20 +34,20 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
   const location = useLocation();
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar shadow-sm">
+    <aside className="flex h-full w-52 flex-col border-r border-sidebar-border bg-sidebar shadow-sm">
       {/* Logo */}
-      <div className="flex items-center gap-3 border-b border-sidebar-border px-5 py-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <GraduationCap className="h-6 w-6" />
+      <div className="flex items-center gap-2.5 border-b border-sidebar-border px-4 py-3.5">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+          <GraduationCap className="h-4.5 w-4.5" />
         </div>
         <div>
-          <p className="text-sm font-bold text-sidebar-foreground">MUST Connect</p>
-          <p className="text-xs text-muted-foreground">Admin Portal</p>
+          <p className="text-xs font-bold text-sidebar-foreground">MUST Connect</p>
+          <p className="text-[11px] text-muted-foreground">Admin Portal</p>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
         {navItems.map((item, idx) => {
           const isActive =
             (item.label === "Dashboard" && location.pathname === "/") ||
@@ -66,13 +66,13 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
               to={item.to}
               onClick={onNavigate}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-xs font-medium transition-colors",
                 isActive
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               )}
             >
-              <Icon className="h-4 w-4 shrink-0" />
+              <Icon className="h-3.5 w-3.5 shrink-0" />
               <span>{item.label}</span>
             </Link>
           );
@@ -80,17 +80,17 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-sidebar-border p-3">
-        <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+      <div className="border-t border-sidebar-border p-2">
+        <div className="flex items-center gap-2 rounded-md px-2 py-1.5">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
             AU
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-sidebar-foreground">Admin User</p>
-            <p className="truncate text-xs text-muted-foreground">admin@must.edu</p>
+            <p className="truncate text-xs font-medium text-sidebar-foreground">Admin User</p>
+            <p className="truncate text-[11px] text-muted-foreground">admin@must.edu</p>
           </div>
           <Link to="/login" className="text-muted-foreground hover:text-foreground" aria-label="Sign out">
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-3.5 w-3.5" />
           </Link>
         </div>
       </div>

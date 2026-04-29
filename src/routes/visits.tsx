@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
-import { Calendar, Clock, ChevronDown } from "lucide-react";
+import { getVisits, updateVisitStatus, type Visit, type VisitStatus } from "@/api/visits";
 
 export const Route = createFileRoute("/visits")({
   head: () => ({
@@ -13,90 +13,371 @@ export const Route = createFileRoute("/visits")({
   component: VisitsPage,
 });
 
-type VisitStatus = "Pending" | "Done" | "Missed";
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-interface Visit {
-  id: number;
-  name: string;
-  number: string;
-  date: string;
-  time: string;
-  status: VisitStatus;
-  avatarColor: string;
+function formatDate(iso: string): string {
+  const datePart = iso.slice(0, 10);
+  const [year, month, day] = datePart.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
-const visits: Visit[] = [
-  { id: 1, name: "Sarah Ahmed", number: "+92 300 1234567", date: "Jan 15, 2024", time: "10:00 AM", status: "Pending", avatarColor: "#fde68a" },
-  { id: 2, name: "Ali Hassan", number: "+92 301 9876543", date: "Jan 15, 2024", time: "11:30 AM", status: "Done", avatarColor: "#bfdbfe" },
-  { id: 3, name: "Fatima Khan", number: "+92 333 5551234", date: "Jan 16, 2024", time: "2:00 PM", status: "Missed", avatarColor: "#fecaca" },
-  { id: 4, name: "Ahmed Raza", number: "+92 321 4567890", date: "Jan 16, 2024", time: "3:30 PM", status: "Done", avatarColor: "#bbf7d0" },
-  { id: 5, name: "Ayesha Malik", number: "+92 345 7778888", date: "Jan 17, 2024", time: "9:00 AM", status: "Pending", avatarColor: "#e9d5ff" },
-  { id: 6, name: "Bilal Tariq", number: "+92 312 9998765", date: "Jan 17, 2024", time: "1:00 PM", status: "Missed", avatarColor: "#fed7aa" },
-  { id: 7, name: "Zainab Ali", number: "+92 334 2223344", date: "Jan 18, 2024", time: "10:30 AM", status: "Done", avatarColor: "#a5f3fc" },
-  { id: 8, name: "Usman Qadir", number: "+92 322 6667777", date: "Jan 18, 2024", time: "2:30 PM", status: "Pending", avatarColor: "#fbcfe8" },
-  { id: 9, name: "Maria Saleem", number: "+92 335 1112233", date: "Jan 19, 2024", time: "11:00 AM", status: "Done", avatarColor: "#d9f99d" },
-  { id: 10, name: "Hassan Mahmood", number: "+92 346 8889990", date: "Jan 19, 2024", time: "4:00 PM", status: "Pending", avatarColor: "#fcd34d" },
+function formatTime(t: string): string {
+  const [h, m] = t.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, "0")} ${ampm}`;
+}
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+const AVATAR_COLORS = [
+  "#fde68a", "#bfdbfe", "#fecaca", "#bbf7d0",
+  "#e9d5ff", "#fed7aa", "#a5f3fc", "#fbcfe8",
+  "#d9f99d", "#fcd34d",
 ];
 
-function StatusBadge({ status }: { status: VisitStatus }) {
-  const styles: Record<VisitStatus, { bg: string; color: string; border: string }> = {
-    Pending: { bg: "#fffbeb", color: "#b45309", border: "#fde68a" },
-    Done: { bg: "#f0fdf4", color: "#15803d", border: "#bbf7d0" },
-    Missed: { bg: "#fef2f2", color: "#b91c1c", border: "#fecaca" },
-  };
-  const s = styles[status];
+// ─── Status Select ─────────────────────────────────────────────────────────────
+
+const STATUS_SELECT_CLASSES: Record<VisitStatus, string> = {
+  pending:
+    "px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-semibold border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-200 transition-all appearance-none pr-7 cursor-pointer",
+  done: "px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-semibold border border-green-200 focus:outline-none focus:ring-2 focus:ring-green-200 transition-all appearance-none pr-7 cursor-pointer",
+  missed:
+    "px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-semibold border border-red-200 focus:outline-none focus:ring-2 focus:ring-red-200 transition-all appearance-none pr-7 cursor-pointer",
+};
+
+function StatusSelect({
+  visit,
+  onUpdate,
+}: {
+  visit: Visit;
+  onUpdate: (id: number, status: "done" | "missed") => Promise<void>;
+}) {
+  const [current, setCurrent] = useState<VisitStatus>(visit.status);
+  const [loading, setLoading] = useState(false);
+
+  async function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const next = e.target.value as VisitStatus;
+    if (next === "pending" || next === current) return; // API only accepts done/missed
+    setLoading(true);
+    setCurrent(next); // optimistic
+    try {
+      await onUpdate(visit.id, next as "done" | "missed");
+    } catch {
+      setCurrent(current); // revert on error
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <span
-      className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold"
-      style={{ backgroundColor: s.bg, color: s.color, borderColor: s.border }}
-    >
-      {status}
-      <ChevronDown className="h-3 w-3" />
-    </span>
+    <div className="relative inline-flex items-center">
+      <select
+        value={current}
+        onChange={handleChange}
+        disabled={loading}
+        className={STATUS_SELECT_CLASSES[current]}
+      >
+        <option value="pending">Pending</option>
+        <option value="done">Done</option>
+        <option value="missed">Missed</option>
+      </select>
+      {/* Custom chevron */}
+      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
+        {loading ? (
+          <svg
+            className="h-3 w-3 animate-spin"
+            style={{
+              color:
+                current === "pending"
+                  ? "#b45309"
+                  : current === "done"
+                  ? "#15803d"
+                  : "#b91c1c",
+            }}
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v8z"
+            />
+          </svg>
+        ) : (
+          <svg
+            className="h-3 w-3"
+            style={{
+              color:
+                current === "pending"
+                  ? "#b45309"
+                  : current === "done"
+                  ? "#15803d"
+                  : "#b91c1c",
+            }}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.5}
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        )}
+      </span>
+    </div>
   );
 }
 
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+
+function Avatar({ name, index }: { name: string; index: number }) {
+  return (
+    <div
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-slate-700"
+      style={{ backgroundColor: AVATAR_COLORS[index % AVATAR_COLORS.length] }}
+    >
+      {initials(name)}
+    </div>
+  );
+}
+
+// ─── Spinner ──────────────────────────────────────────────────────────────────
+
+function Spinner() {
+  return (
+    <svg
+      className="mx-auto h-5 w-5 animate-spin text-slate-400"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8v8z"
+      />
+    </svg>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 function VisitsPage() {
+  const [visits, setVisits] = useState<Visit[]>([]);
+  const [meta, setMeta] = useState({
+    total: 0,
+    page: 1,
+    per_page: 20,
+    total_pages: 1,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [dateFilter, setDateFilter] = useState("All Dates");
 
+  // ── Fetch ──────────────────────────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    getVisits(page)
+      .then((res) => {
+        if (!cancelled) {
+          setVisits(res.items);
+          setMeta(res.meta);
+        }
+      })
+      .catch((err: Error) => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [page]);
+
+  // ── Status update ──────────────────────────────────────────────────────
+  async function handleStatusUpdate(id: number, status: "done" | "missed") {
+    const updated = await updateVisitStatus(id, status);
+    setVisits((prev) =>
+      prev.map((v) => (v.id === id ? { ...v, status: updated.status } : v))
+    );
+  }
+
+  // ── Client-side filters ────────────────────────────────────────────────
+  const filtered = useMemo(() => {
+    return visits.filter((v) => {
+      if (
+        statusFilter !== "All Status" &&
+        v.status !== statusFilter.toLowerCase()
+      )
+        return false;
+
+      if (dateFilter !== "All Dates") {
+        const datePart = v.visit_date.slice(0, 10);
+        const [y, mo, d] = datePart.split("-").map(Number);
+        const visitDate = new Date(y, mo - 1, d);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (dateFilter === "Today") {
+          if (visitDate.getTime() !== today.getTime()) return false;
+        } else if (dateFilter === "This Week") {
+          const weekAgo = new Date(today);
+          weekAgo.setDate(today.getDate() - 7);
+          if (visitDate < weekAgo) return false;
+        } else if (dateFilter === "This Month") {
+          if (
+            visitDate.getMonth() !== today.getMonth() ||
+            visitDate.getFullYear() !== today.getFullYear()
+          )
+            return false;
+        }
+      }
+      return true;
+    });
+  }, [visits, statusFilter, dateFilter]);
+
+  // ── Stats ──────────────────────────────────────────────────────────────
+  const pendingCount = visits.filter((v) => v.status === "pending").length;
+
+  // ── Pagination ─────────────────────────────────────────────────────────
+  const pageNumbers = useMemo(() => {
+    const total = meta.total_pages;
+    if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages: (number | "…")[] = [1];
+    if (page > 3) pages.push("…");
+    for (
+      let p = Math.max(2, page - 1);
+      p <= Math.min(total - 1, page + 1);
+      p++
+    )
+      pages.push(p);
+    if (page < total - 2) pages.push("…");
+    pages.push(total);
+    return pages;
+  }, [page, meta.total_pages]);
+
+  const showingFrom =
+    meta.total === 0 ? 0 : (meta.page - 1) * meta.per_page + 1;
+  const showingTo = Math.min(meta.page * meta.per_page, meta.total);
+
+  // ── Render ─────────────────────────────────────────────────────────────
   return (
     <AdminLayout
       header={
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Visits</h1>
-          <p className="text-muted-foreground text-sm sm:text-base mt-1">Manage campus visit schedules</p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            Visits
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+            Manage campus visit schedules
+          </p>
         </div>
       }
     >
-      <main className="px-0 max-w-[1400px]">
-        {/* Stats */}
-        <section className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 max-w-2xl">
-          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ backgroundColor: "#eff6ff" }}>
-              <Calendar className="w-5 h-5" style={{ color: "#003d82" }} />
+      <main className="max-w-[1400px] px-0">
+        {/* ── Stats ── */}
+        <section className="mb-8 grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
+          {/* Total Visits */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <div
+                className="flex h-12 w-12 items-center justify-center rounded-xl"
+                style={{ backgroundColor: "#eff6ff" }}
+              >
+                <svg
+                  className="h-6 w-6"
+                  style={{ color: "#003d82" }}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  viewBox="0 0 24 24"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+              </div>
             </div>
-            <p className="text-sm font-medium text-slate-500 mb-1">Total Visits</p>
-            <p className="text-3xl font-bold text-slate-900">248</p>
+            <h3 className="mb-1 text-sm font-medium text-slate-500">
+              Total Visits
+            </h3>
+            <p className="text-3xl font-bold text-slate-900">{meta.total}</p>
           </div>
-          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ backgroundColor: "#fffbeb" }}>
-              <Clock className="w-5 h-5" style={{ color: "#d97706" }} />
+
+          {/* Pending */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <div
+                className="flex h-12 w-12 items-center justify-center rounded-xl"
+                style={{ backgroundColor: "#fffbeb" }}
+              >
+                <svg
+                  className="h-6 w-6 text-amber-600"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  viewBox="0 0 24 24"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
             </div>
-            <p className="text-sm font-medium text-slate-500 mb-1">Pending</p>
-            <p className="text-3xl font-bold text-slate-900">42</p>
+            <h3 className="mb-1 text-sm font-medium text-slate-500">Pending</h3>
+            <p className="text-3xl font-bold text-slate-900">{pendingCount}</p>
           </div>
         </section>
 
-        {/* Visit Schedule Table */}
-        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 sm:px-8 py-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h3 className="text-lg font-bold text-slate-900">Visit Schedule</h3>
+        {/* ── Table Section ── */}
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          {/* Header */}
+          <div className="flex flex-col gap-3 border-b border-slate-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-lg font-semibold text-slate-900">
+              Visit Schedule
+            </h2>
             <div className="flex items-center gap-3">
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700"
+                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 focus:border-[#003d82] focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
               >
                 <option>All Status</option>
                 <option>Pending</option>
@@ -105,60 +386,196 @@ function VisitsPage() {
               </select>
               <select
                 value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700"
+                onChange={(e) => { setDateFilter(e.target.value); setPage(1); }}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 focus:border-[#003d82] focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
               >
                 <option>All Dates</option>
                 <option>Today</option>
                 <option>This Week</option>
+                <option>This Month</option>
               </select>
             </div>
           </div>
 
+          {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-50">
+              <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>
-                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-3">Name</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-3">Number</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-3">Date of Visit</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-3">Time</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-3">Status</th>
+                  {["Name", "Number", "Date of Visit", "Time", "Status"].map(
+                    (h) => (
+                      <th
+                        key={h}
+                        className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                      >
+                        {h}
+                      </th>
+                    )
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {visits.map((v) => (
-                  <tr key={v.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-semibold text-slate-700"
-                          style={{ backgroundColor: v.avatarColor }}
+                {/* Loading */}
+                {loading && (
+                  <tr>
+                    <td colSpan={5} className="py-16 text-center">
+                      <Spinner />
+                    </td>
+                  </tr>
+                )}
+
+                {/* Error */}
+                {!loading && error && (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <svg
+                          className="h-5 w-5 text-red-500"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          viewBox="0 0 24 24"
                         >
-                          {v.name.split(" ").map((p) => p[0]).join("").slice(0, 2)}
-                        </div>
-                        <span className="text-sm font-medium text-slate-900">{v.name}</span>
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="8" x2="12" y2="12" />
+                          <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        <p className="text-sm text-red-600">{error}</p>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{v.number}</td>
-                    <td className="px-6 py-4 text-sm" style={{ color: "#003d82" }}>{v.date}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{v.time}</td>
-                    <td className="px-6 py-4"><StatusBadge status={v.status} /></td>
                   </tr>
-                ))}
+                )}
+
+                {/* Empty */}
+                {!loading && !error && filtered.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="py-12 text-center text-sm text-slate-400"
+                    >
+                      No visits found for the selected filters.
+                    </td>
+                  </tr>
+                )}
+
+                {/* Rows */}
+                {!loading &&
+                  !error &&
+                  filtered.map((v, i) => (
+                    <tr
+                      key={v.id}
+                      className="transition-colors hover:bg-slate-50"
+                    >
+                      {/* Name */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar name={v.student_name} index={i} />
+                          <span className="text-sm font-medium text-slate-900">
+                            {v.student_name}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Number */}
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {v.phone_number}
+                      </td>
+
+                      {/* Date */}
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {formatDate(v.visit_date)}
+                      </td>
+
+                      {/* Time */}
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {formatTime(v.visit_time)}
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-6 py-4">
+                        <StatusSelect visit={v} onUpdate={handleStatusUpdate} />
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
 
           {/* Pagination */}
-          <div className="px-6 sm:px-8 py-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-sm text-slate-500">Showing 1 to 10 of 248 visits</p>
-            <div className="flex items-center gap-1">
-              <button className="px-3 py-1.5 text-sm text-slate-600 rounded-md border border-slate-200 hover:bg-slate-50">Previous</button>
-              <button className="px-3 py-1.5 text-sm text-white rounded-md font-semibold" style={{ backgroundColor: "#003d82" }}>1</button>
-              <button className="px-3 py-1.5 text-sm text-slate-600 rounded-md hover:bg-slate-50">2</button>
-              <button className="px-3 py-1.5 text-sm text-slate-600 rounded-md hover:bg-slate-50">3</button>
-              <button className="px-3 py-1.5 text-sm text-slate-600 rounded-md border border-slate-200 hover:bg-slate-50">Next</button>
+          <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-200 px-6 py-4 sm:flex-row sm:px-8">
+            <p className="text-sm text-slate-600">
+              Showing{" "}
+              <span className="font-medium text-slate-700">
+                {showingFrom}–{showingTo}
+              </span>{" "}
+              of{" "}
+              <span className="font-medium text-slate-700">{meta.total}</span>{" "}
+              visits
+            </p>
+            <div className="flex items-center gap-1.5">
+              <button
+                disabled={page <= 1 || loading}
+                onClick={() => setPage((p) => p - 1)}
+                className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                Previous
+              </button>
+
+              {pageNumbers.map((p, i) =>
+                p === "…" ? (
+                  <span key={`e${i}`} className="px-2 text-slate-400">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p as number)}
+                    disabled={loading}
+                    className="rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-40"
+                    style={
+                      p === page
+                        ? { backgroundColor: "#003d82", color: "#fff" }
+                        : { color: "#475569" }
+                    }
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+
+              <button
+                disabled={page >= meta.total_pages || loading}
+                onClick={() => setPage((p) => p + 1)}
+                className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Next
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
             </div>
           </div>
         </section>
