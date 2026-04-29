@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, ChevronDown } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/chats")({
@@ -60,9 +60,37 @@ function ChatsPage() {
   return (
     <AdminLayout
       header={
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Chats</h1>
-          <p className="text-sm text-muted-foreground">Monitor student conversations</p>
+        <div className="flex w-full items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Chats</h1>
+            <p className="text-sm text-muted-foreground">Monitor student conversations</p>
+          </div>
+          <div className="flex items-center gap-1.5 text-sm">
+            <button
+              onClick={() => setFilter("all")}
+              className={`rounded-full px-3 py-1.5 font-medium transition-colors ${filter === "all" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setFilter("unread")}
+              className={`rounded-full px-3 py-1.5 font-medium transition-colors ${filter === "unread" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}
+            >
+              Unread
+            </button>
+            <Link
+              to="/chats/highly-engaged"
+              className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 font-medium text-muted-foreground transition-colors hover:bg-muted"
+            >
+              Highly Engaged <ChevronDown className="h-3.5 w-3.5" />
+            </Link>
+            <Link
+              to="/chats/fee-inquiry"
+              className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 font-medium text-muted-foreground transition-colors hover:bg-muted"
+            >
+              Fee Inquiry <ChevronDown className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </div>
       }
     >

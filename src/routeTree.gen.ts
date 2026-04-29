@@ -22,6 +22,8 @@ import { Route as FaqsIndexRouteImport } from './routes/faqs.index'
 import { Route as CampaignsIndexRouteImport } from './routes/campaigns.index'
 import { Route as MediaCategoryRouteImport } from './routes/media.$category'
 import { Route as FaqsCategoryRouteImport } from './routes/faqs.$category'
+import { Route as ChatsHighlyEngagedRouteImport } from './routes/chats.highly-engaged'
+import { Route as ChatsFeeInquiryRouteImport } from './routes/chats.fee-inquiry'
 import { Route as CampaignsSuccessRouteImport } from './routes/campaigns.success'
 import { Route as CampaignsNewRouteImport } from './routes/campaigns.new'
 import { Route as CampaignsFailedRouteImport } from './routes/campaigns.failed'
@@ -92,6 +94,16 @@ const FaqsCategoryRoute = FaqsCategoryRouteImport.update({
   path: '/faqs/$category',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChatsHighlyEngagedRoute = ChatsHighlyEngagedRouteImport.update({
+  id: '/highly-engaged',
+  path: '/highly-engaged',
+  getParentRoute: () => ChatsRoute,
+} as any)
+const ChatsFeeInquiryRoute = ChatsFeeInquiryRouteImport.update({
+  id: '/fee-inquiry',
+  path: '/fee-inquiry',
+  getParentRoute: () => ChatsRoute,
+} as any)
 const CampaignsSuccessRoute = CampaignsSuccessRouteImport.update({
   id: '/campaigns/success',
   path: '/campaigns/success',
@@ -117,7 +129,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
   '/campaign-media': typeof CampaignMediaRoute
-  '/chats': typeof ChatsRoute
+  '/chats': typeof ChatsRouteWithChildren
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
@@ -126,6 +138,8 @@ export interface FileRoutesByFullPath {
   '/campaigns/failed': typeof CampaignsFailedRoute
   '/campaigns/new': typeof CampaignsNewRoute
   '/campaigns/success': typeof CampaignsSuccessRoute
+  '/chats/fee-inquiry': typeof ChatsFeeInquiryRoute
+  '/chats/highly-engaged': typeof ChatsHighlyEngagedRoute
   '/faqs/$category': typeof FaqsCategoryRoute
   '/media/$category': typeof MediaCategoryRoute
   '/campaigns/': typeof CampaignsIndexRoute
@@ -136,7 +150,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
   '/campaign-media': typeof CampaignMediaRoute
-  '/chats': typeof ChatsRoute
+  '/chats': typeof ChatsRouteWithChildren
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
@@ -145,6 +159,8 @@ export interface FileRoutesByTo {
   '/campaigns/failed': typeof CampaignsFailedRoute
   '/campaigns/new': typeof CampaignsNewRoute
   '/campaigns/success': typeof CampaignsSuccessRoute
+  '/chats/fee-inquiry': typeof ChatsFeeInquiryRoute
+  '/chats/highly-engaged': typeof ChatsHighlyEngagedRoute
   '/faqs/$category': typeof FaqsCategoryRoute
   '/media/$category': typeof MediaCategoryRoute
   '/campaigns': typeof CampaignsIndexRoute
@@ -156,7 +172,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
   '/campaign-media': typeof CampaignMediaRoute
-  '/chats': typeof ChatsRoute
+  '/chats': typeof ChatsRouteWithChildren
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
@@ -165,6 +181,8 @@ export interface FileRoutesById {
   '/campaigns/failed': typeof CampaignsFailedRoute
   '/campaigns/new': typeof CampaignsNewRoute
   '/campaigns/success': typeof CampaignsSuccessRoute
+  '/chats/fee-inquiry': typeof ChatsFeeInquiryRoute
+  '/chats/highly-engaged': typeof ChatsHighlyEngagedRoute
   '/faqs/$category': typeof FaqsCategoryRoute
   '/media/$category': typeof MediaCategoryRoute
   '/campaigns/': typeof CampaignsIndexRoute
@@ -186,6 +204,8 @@ export interface FileRouteTypes {
     | '/campaigns/failed'
     | '/campaigns/new'
     | '/campaigns/success'
+    | '/chats/fee-inquiry'
+    | '/chats/highly-engaged'
     | '/faqs/$category'
     | '/media/$category'
     | '/campaigns/'
@@ -205,6 +225,8 @@ export interface FileRouteTypes {
     | '/campaigns/failed'
     | '/campaigns/new'
     | '/campaigns/success'
+    | '/chats/fee-inquiry'
+    | '/chats/highly-engaged'
     | '/faqs/$category'
     | '/media/$category'
     | '/campaigns'
@@ -224,6 +246,8 @@ export interface FileRouteTypes {
     | '/campaigns/failed'
     | '/campaigns/new'
     | '/campaigns/success'
+    | '/chats/fee-inquiry'
+    | '/chats/highly-engaged'
     | '/faqs/$category'
     | '/media/$category'
     | '/campaigns/'
@@ -235,7 +259,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BatchesRoute: typeof BatchesRoute
   CampaignMediaRoute: typeof CampaignMediaRoute
-  ChatsRoute: typeof ChatsRoute
+  ChatsRoute: typeof ChatsRouteWithChildren
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
@@ -344,6 +368,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FaqsCategoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/chats/highly-engaged': {
+      id: '/chats/highly-engaged'
+      path: '/highly-engaged'
+      fullPath: '/chats/highly-engaged'
+      preLoaderRoute: typeof ChatsHighlyEngagedRouteImport
+      parentRoute: typeof ChatsRoute
+    }
+    '/chats/fee-inquiry': {
+      id: '/chats/fee-inquiry'
+      path: '/fee-inquiry'
+      fullPath: '/chats/fee-inquiry'
+      preLoaderRoute: typeof ChatsFeeInquiryRouteImport
+      parentRoute: typeof ChatsRoute
+    }
     '/campaigns/success': {
       id: '/campaigns/success'
       path: '/campaigns/success'
@@ -375,11 +413,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ChatsRouteChildren {
+  ChatsFeeInquiryRoute: typeof ChatsFeeInquiryRoute
+  ChatsHighlyEngagedRoute: typeof ChatsHighlyEngagedRoute
+}
+
+const ChatsRouteChildren: ChatsRouteChildren = {
+  ChatsFeeInquiryRoute: ChatsFeeInquiryRoute,
+  ChatsHighlyEngagedRoute: ChatsHighlyEngagedRoute,
+}
+
+const ChatsRouteWithChildren = ChatsRoute._addFileChildren(ChatsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BatchesRoute: BatchesRoute,
   CampaignMediaRoute: CampaignMediaRoute,
-  ChatsRoute: ChatsRoute,
+  ChatsRoute: ChatsRouteWithChildren,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
