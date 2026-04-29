@@ -57,7 +57,7 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
             (item.label === "Media" && location.pathname.startsWith("/media")) ||
             (item.label === "Campaign Media" && location.pathname.startsWith("/campaign-media")) ||
             (item.label === "FAQs" && location.pathname.startsWith("/faqs")) ||
-            (item.label === "Chats" && location.pathname === "/chats") ||
+            (item.label === "Chats" && location.pathname.startsWith("/chats")) ||
             (item.label === "Settings" && location.pathname === "/settings");
           const Icon = item.icon;
           return (
