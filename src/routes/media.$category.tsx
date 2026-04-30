@@ -28,6 +28,9 @@ import {
   FileVideo,
   Globe,
   X,
+  Copy,
+  ExternalLink,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -61,11 +64,7 @@ function tabLabel(t: MediaAssetType) {
   return t === "image" ? "Images" : t === "video" ? "Videos" : "Links";
 }
 
-function TabIcon({ type }: { type: MediaAssetType }) {
-  if (type === "image") return <ImageIcon className="h-4 w-4" />;
-  if (type === "video") return <Video className="h-4 w-4" />;
-  return <Link2 className="h-4 w-4" />;
-}
+// ─── Asset Card (image / video) ───────────────────────────────────────────────
 
 function AssetCard({
   asset,
@@ -74,14 +73,13 @@ function AssetCard({
   asset: MediaAsset;
   onDelete: (id: number) => void;
 }) {
-  const isLink = asset.type === "link";
   const isVideo = asset.type === "video";
 
   return (
     <div className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
       {/* Preview — square */}
       <div className="aspect-square bg-muted relative overflow-hidden">
-        {asset.file_url && !isLink ? (
+        {asset.file_url ? (
           isVideo ? (
             <video
               src={asset.file_url}
@@ -98,22 +96,7 @@ function AssetCard({
           )
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground px-3">
-            {isLink ? (
-              <>
-                <Globe className="h-10 w-10 opacity-30" />
-                {asset.file_url && (
-                  <a
-                    href={asset.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="max-w-full truncate text-xs text-primary underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {asset.file_url}
-                  </a>
-                )}
-              </>
-            ) : isVideo ? (
+            {isVideo ? (
               <FileVideo className="h-10 w-10 opacity-30" />
             ) : (
               <FileImage className="h-10 w-10 opacity-30" />
@@ -147,6 +130,100 @@ function AssetCard({
   );
 }
 
+// ─── File Row (link / pdf) ────────────────────────────────────────────────────
+
+function FileRow({
+  asset,
+  onDelete,
+}: {
+  asset: MediaAsset;
+  onDelete: (id: number) => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    if (!asset.file_url) return;
+    try {
+      await navigator.clipboard.writeText(asset.file_url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback for older browsers
+      const ta = document.createElement("textarea");
+      ta.value = asset.file_url;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleOpen = () => {
+    if (asset.file_url) window.open(asset.file_url, "_blank", "noopener,noreferrer");
+  };
+
+  return (
+    <div className="group flex items-center gap-4 rounded-xl border border-border bg-card px-5 py-4 shadow-sm transition-all hover:shadow-md hover:border-border/80">
+      {/* Icon */}
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <Globe className="h-5 w-5" />
+      </div>
+
+      {/* Meta */}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-foreground">{asset.title}</p>
+        <p className="truncate text-xs text-muted-foreground mt-0.5">
+          {asset.file_url || "—"}
+        </p>
+      </div>
+
+      {/* File size */}
+      {asset.file_size && (
+        <span className="hidden sm:block shrink-0 text-xs text-muted-foreground/70 tabular-nums">
+          {asset.file_size}
+        </span>
+      )}
+
+      {/* Actions */}
+      <div className="flex shrink-0 items-center gap-2">
+        {/* Copy URL */}
+        <button
+          onClick={handleCopy}
+          title={copied ? "Copied!" : "Copy URL"}
+          className={cn(
+            "flex h-8 w-8 items-center justify-center rounded-lg border transition-all",
+            copied
+              ? "border-emerald-400 bg-emerald-50 text-emerald-600"
+              : "border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted",
+          )}
+        >
+          {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+        </button>
+
+        {/* Open in browser */}
+        <button
+          onClick={handleOpen}
+          title="Open in browser"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+        </button>
+
+        {/* Delete */}
+        <button
+          onClick={() => onDelete(asset.id)}
+          title="Delete"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-all opacity-0 group-hover:opacity-100"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Upload Dialog ────────────────────────────────────────────────────────────
 
 function UploadDialog({
@@ -164,8 +241,8 @@ function UploadDialog({
   const [title, setTitle] = useState("");
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
-  const [fileUrl, setFileUrl] = useState("");       // for link type
-  const [file, setFile] = useState<File | null>(null); // for image/video
+  const [fileUrl, setFileUrl] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -216,12 +293,10 @@ function UploadDialog({
       <DialogContent className="sm:max-w-2xl p-0 overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 border-b border-border">
-          <div>
-            <DialogTitle className="text-xl font-bold">Upload Media</DialogTitle>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Add images, videos, or links to your media library
-            </p>
-          </div>
+          <DialogTitle className="text-xl font-bold">Upload Media</DialogTitle>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Add images, videos, or links to your media library
+          </p>
         </div>
 
         <div className="px-6 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
@@ -442,9 +517,9 @@ function CategoryDetailPage() {
     }
   };
 
-  // ── After upload: refetch to get server data ───────────────────────────
+  // ── After upload: refetch ──────────────────────────────────────────────
   const handleCreated = async (asset: MediaAsset) => {
-    setActiveTab(asset.type);   // switch to the tab of the uploaded type
+    setActiveTab(asset.type);
     await fetchAssets(page);
   };
 
@@ -456,13 +531,14 @@ function CategoryDetailPage() {
   const startItem = total === 0 ? 0 : (page - 1) * PER_PAGE + 1;
   const endItem = Math.min(page * PER_PAGE, total);
 
+  const isListView = activeTab === "link";
+
   // ── Render ─────────────────────────────────────────────────────────────
   return (
     <AdminLayout
       header={
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-           
             <h1 className="text-2xl font-bold tracking-tight">
               Media Library — {title}
             </h1>
@@ -534,20 +610,30 @@ function CategoryDetailPage() {
           <p className="text-sm text-destructive">{error}</p>
         )}
 
-        {/* Grid */}
+        {/* Content */}
         {!loading && !error && (
           <>
             {filtered.length > 0 ? (
-              <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
-                {filtered.map((asset) => (
-                  <AssetCard key={asset.id} asset={asset} onDelete={handleDelete} />
-                ))}
-              </div>
+              isListView ? (
+                /* ── Link list view ── */
+                <div className="flex flex-col gap-2">
+                  {filtered.map((asset) => (
+                    <FileRow key={asset.id} asset={asset} onDelete={handleDelete} />
+                  ))}
+                </div>
+              ) : (
+                /* ── Image / video grid view ── */
+                <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
+                  {filtered.map((asset) => (
+                    <AssetCard key={asset.id} asset={asset} onDelete={handleDelete} />
+                  ))}
+                </div>
+              )
             ) : (
               <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border py-16 text-center text-muted-foreground">
                 <UploadCloud className="h-10 w-10 opacity-30" />
                 <p className="text-sm font-medium">
-              {searchInput.trim()
+                  {searchInput.trim()
                     ? `No ${activeTab}s found for "${searchInput.trim()}"`
                     : `No ${activeTab}s yet. Click "Upload Media" to add one.`}
                 </p>
