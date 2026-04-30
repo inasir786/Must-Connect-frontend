@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Upload,
@@ -32,6 +32,12 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    navigate({ to: "/login" });
+  };
 
   return (
     <aside className="flex h-full w-52 flex-col border-r border-sidebar-border bg-sidebar shadow-sm">
@@ -89,9 +95,13 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
             <p className="truncate text-xs font-medium text-sidebar-foreground">Admin User</p>
             <p className="truncate text-[11px] text-muted-foreground">admin@must.edu</p>
           </div>
-          <Link to="/login" className="text-muted-foreground hover:text-foreground" aria-label="Sign out">
+          <button
+            onClick={handleLogout}
+            className="text-muted-foreground hover:text-foreground"
+            aria-label="Sign out"
+          >
             <LogOut className="h-3.5 w-3.5" />
-          </Link>
+          </button>
         </div>
       </div>
     </aside>

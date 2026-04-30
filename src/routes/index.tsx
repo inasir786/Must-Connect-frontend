@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { getDashboard, DashboardData } from "@/api/dashboard";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -61,7 +62,7 @@ function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const navigate = useNavigate();
   useEffect(() => {
     let cancelled = false;
     getDashboard()
@@ -111,7 +112,7 @@ function Dashboard() {
               <div className="h-3 bg-slate-100 rounded w-1/2" />
               <div className="h-2 bg-slate-100 rounded-full w-full" />
               <div className="grid grid-cols-3 gap-4 pt-2">
-                {[0,1,2].map(i => <div key={i} className="h-10 bg-slate-100 rounded" />)}
+                {[0, 1, 2].map(i => <div key={i} className="h-10 bg-slate-100 rounded" />)}
               </div>
             </div>
           ) : campaign ? (
@@ -131,6 +132,7 @@ function Dashboard() {
                     </p>
                   </div>
                   <button
+                    onClick={() => navigate({ to: "/campaigns/$id", params: { id: String(campaign.id) } })}
                     className="flex items-center justify-center gap-2 px-4 py-2 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors w-full sm:w-auto"
                     style={{ backgroundColor: "#003d82" }}
                     onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#1e40af")}

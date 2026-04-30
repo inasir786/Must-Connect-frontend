@@ -62,29 +62,40 @@ function StatusSelect({
   async function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const next = e.target.value as VisitStatus;
     if (next === current) return;
-    if (next === "pending") return; // API only accepts done/missed
+    if (next === "pending") return;
 
     const prev = current;
     setLoading(true);
-    setCurrent(next); // optimistic
+    setCurrent(next);
 
     try {
       await onUpdate(visit.id, next as "done" | "missed");
     } catch {
-      setCurrent(prev); // revert on error
+      setCurrent(prev);
     } finally {
       setLoading(false);
     }
   }
 
-  const colorMap: Record<VisitStatus, { bg: string; text: string; border: string; ring: string; chevron: string }> = {
-    pending: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", ring: "focus:ring-amber-200", chevron: "#b45309" },
-    done: { bg: "bg-green-50", text: "text-green-700", border: "border-green-200", ring: "focus:ring-green-200", chevron: "#15803d" },
-    missed: { bg: "bg-red-50", text: "text-red-700", border: "border-red-200", ring: "focus:ring-red-200", chevron: "#b91c1c" },
-  };
+  // ── Static badge for done ──
+  if (current === "done") {
+    return (
+      <span className="inline-flex items-center rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
+        Done
+      </span>
+    );
+  }
 
-  const c = colorMap[current];
+  // ── Static badge for missed ──
+  if (current === "missed") {
+    return (
+      <span className="inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700">
+        Missed
+      </span>
+    );
+  }
 
+  // ── Editable dropdown only for pending ──
   return (
     <div className="relative inline-flex items-center">
       <select
@@ -94,7 +105,7 @@ function StatusSelect({
         className={[
           "appearance-none rounded-lg border px-3 py-1.5 pr-7",
           "text-xs font-semibold focus:outline-none focus:ring-2 transition-all cursor-pointer",
-          c.bg, c.text, c.border, c.ring,
+          "bg-amber-50 text-amber-700 border-amber-200 focus:ring-amber-200",
           loading ? "opacity-50 cursor-not-allowed" : "",
         ].join(" ")}
       >
@@ -103,12 +114,10 @@ function StatusSelect({
         <option value="missed">Missed</option>
       </select>
 
-      {/* Loading spinner inside select */}
       {loading ? (
         <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
           <svg
-            className="h-3 w-3 animate-spin"
-            style={{ color: c.chevron }}
+            className="h-3 w-3 animate-spin text-amber-700"
             fill="none"
             viewBox="0 0 24 24"
           >
@@ -130,8 +139,7 @@ function StatusSelect({
       ) : (
         <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
           <svg
-            className="h-3 w-3"
-            style={{ color: c.chevron }}
+            className="h-3 w-3 text-amber-700"
             fill="none"
             stroke="currentColor"
             strokeWidth={2.5}
@@ -308,7 +316,7 @@ function VisitsPage() {
       }
     >
       <main className="max-w-[1400px] px-0">
-        {/* ── Stats - Smaller cards ── */}
+        {/* ── Stats ── */}
         <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
           {/* Total Visits */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -332,9 +340,7 @@ function VisitsPage() {
                 </svg>
               </div>
             </div>
-            <h3 className="mb-1 text-xs font-medium text-slate-500">
-              Total Visits
-            </h3>
+            <h3 className="mb-1 text-xs font-medium text-slate-500">Total Visits</h3>
             <p className="text-2xl font-bold text-slate-900">{meta.total}</p>
           </div>
 
@@ -375,11 +381,7 @@ function VisitsPage() {
                   strokeWidth={1.8}
                   viewBox="0 0 24 24"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
             </div>
@@ -416,9 +418,7 @@ function VisitsPage() {
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           {/* Header */}
           <div className="flex flex-col gap-3 border-b border-slate-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-base font-semibold text-slate-900">
-              Visit Schedule
-            </h2>
+            <h2 className="text-base font-semibold text-slate-900">Visit Schedule</h2>
             <div className="flex items-center gap-3">
               <select
                 value={statusFilter}
@@ -448,16 +448,14 @@ function VisitsPage() {
             <table className="w-full">
               <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>
-                  {["Name", "Number", "Date of Visit", "Time", "Status"].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
-                      >
-                        {h}
-                      </th>
-                    )
-                  )}
+                  {["Name", "Number", "Date of Visit", "Time", "Status"].map((h) => (
+                    <th
+                      key={h}
+                      className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -495,10 +493,7 @@ function VisitsPage() {
                 {/* Empty */}
                 {!loading && !error && filtered.length === 0 && (
                   <tr>
-                    <td
-                      colSpan={5}
-                      className="py-12 text-center text-sm text-slate-400"
-                    >
+                    <td colSpan={5} className="py-12 text-center text-sm text-slate-400">
                       No visits found for the selected filters.
                     </td>
                   </tr>
@@ -508,10 +503,7 @@ function VisitsPage() {
                 {!loading &&
                   !error &&
                   filtered.map((v, i) => (
-                    <tr
-                      key={v.id}
-                      className="transition-colors hover:bg-slate-50"
-                    >
+                    <tr key={v.id} className="transition-colors hover:bg-slate-50">
                       {/* Name */}
                       <td className="px-6 py-3">
                         <div className="flex items-center gap-3">
@@ -551,9 +543,7 @@ function VisitsPage() {
           <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-200 px-6 py-4 sm:flex-row sm:px-8">
             <p className="text-sm text-slate-600">
               Showing{" "}
-              <span className="font-medium text-slate-700">
-                {showingFrom}–{showingTo}
-              </span>{" "}
+              <span className="font-medium text-slate-700">{showingFrom}–{showingTo}</span>{" "}
               of{" "}
               <span className="font-medium text-slate-700">{meta.total}</span>{" "}
               visits
@@ -571,20 +561,14 @@ function VisitsPage() {
                   strokeWidth={2}
                   viewBox="0 0 24 24"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 19l-7-7 7-7"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
                 Previous
               </button>
 
               {pageNumbers.map((p, i) =>
                 p === "…" ? (
-                  <span key={`e${i}`} className="px-2 text-slate-400">
-                    …
-                  </span>
+                  <span key={`e${i}`} className="px-2 text-slate-400">…</span>
                 ) : (
                   <button
                     key={p}
@@ -615,11 +599,7 @@ function VisitsPage() {
                   strokeWidth={2}
                   viewBox="0 0 24 24"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 5l7 7-7 7"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </button>
             </div>
