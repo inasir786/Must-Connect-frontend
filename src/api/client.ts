@@ -2,7 +2,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 const client = axios.create({
-  baseURL: "http://127.0.0.1:8000/api/v1",
+  baseURL: "http://103.12.199.66/api/v1",
   headers: {
     "Content-Type": "application/json",
   },
@@ -21,10 +21,11 @@ client.interceptors.request.use((config) => {
 client.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Only redirect on 401 if user is NOT already on login page
-    if (error.response?.status === 401 && !window.location.pathname.includes("/login")) {
+    const status = error.response?.status;
+    const isAuthError = status === 401 || status === 403;
+    if (isAuthError && typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
       Cookies.remove("access_token");
-      window.location.href = "/login";
+      window.location.href = "/admin/login";
     }
     return Promise.reject(error);
   }
