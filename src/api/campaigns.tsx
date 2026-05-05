@@ -2,8 +2,16 @@ import client from "./client";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type CampaignStatus = "draft" | "running" | "completed" | "paused";
+export type CampaignStatus = "draft" | "running" | "completed" | "paused" | "archived";
 export type CampaignActionStatus = "running" | "paused" | "completed" | "archived";
+
+export interface MediaFile {
+  id: number;
+  file_name: string;
+  file_type: string;   // e.g. "image/png", "video/mp4"
+  file_size: number;   // bytes
+  url: string;
+}
 
 export interface Campaign {
   id: number;
@@ -15,9 +23,11 @@ export interface Campaign {
   total_contacts: number;
   sent_count: number;
   pending_count: number;
+  failed_count?: number;
   status?: CampaignStatus;
   start_date: string | null;
   created_at: string;
+  media_files: MediaFile[];
 }
 
 export interface CampaignDetail extends Campaign {
@@ -25,6 +35,7 @@ export interface CampaignDetail extends Campaign {
   progress: {
     sent: number;
     pending: number;
+    failed: number;
     total: number;
   };
 }
@@ -47,12 +58,20 @@ export interface RunningCampaignStatus {
   campaign_name: string | null;
 }
 
+// Matches actual API: GET /sending-numbers → { items: [...], total: N }
 export interface SendingNumber {
   id: number;
-  label: string;
-  phone: string;
-  status: "active" | "inactive";
-  assigned?: boolean;
+  phone_number: string;
+  connection_status: "connected" | "disconnected";
+  availability_status: "active" | "inactive";
+  assigned_contacts?: number;   // populated in launch modal
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SendingNumbersResponse {
+  items: SendingNumber[];
+  total: number;
 }
 
 export interface Batch {
@@ -70,6 +89,13 @@ export interface Batch {
   updated_at: string;
 }
 
+export interface CampaignProgress {
+  sent: number;
+  pending: number;
+  failed: number;
+  total: number;
+}
+
 // ─── GET /campaigns ───────────────────────────────────────────────────────────
 
 export const getCampaigns = async (): Promise<Campaign[]> => {
@@ -83,6 +109,13 @@ export const getCampaigns = async (): Promise<Campaign[]> => {
 
 export const getCampaign = async (id: number): Promise<CampaignDetail> => {
   const { data } = await client.get<CampaignDetail>(`/campaigns/${id}`);
+  return data;
+};
+
+// ─── GET /campaigns/:id/progress ─────────────────────────────────────────────
+
+export const getCampaignProgress = async (id: number): Promise<CampaignProgress> => {
+  const { data } = await client.get<CampaignProgress>(`/campaigns/${id}/progress`);
   return data;
 };
 
@@ -104,6 +137,30 @@ export const createCampaign = async (
 ): Promise<CreateCampaignResponse> => {
   const { data } = await client.post<CreateCampaignResponse>("/campaigns", payload);
   return data;
+};
+
+// ─── POST /campaigns/:id/upload-media ────────────────────────────────────────
+// field name = "files" (array), multipart/form-data
+// max 5 files, 10 MB each, .png/.jpg/.jpeg/.mp4 only
+
+export const uploadCampaignMedia = async (
+  id: number,
+  files: File[]
+): Promise<void> => {
+  const formData = new FormData();
+  files.forEach((file) => formData.append("files", file));
+  await client.post(`/campaigns/${id}/upload-media`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+
+// ─── DELETE /campaigns/:id/media/:media_id ────────────────────────────────────
+
+export const deleteCampaignMedia = async (
+  campaignId: number,
+  mediaId: number
+): Promise<void> => {
+  await client.delete(`/campaigns/${campaignId}/media/${mediaId}`);
 };
 
 // ─── POST /campaigns/:id/launch ───────────────────────────────────────────────
@@ -130,7 +187,13 @@ export const stopCampaign = async (id: number): Promise<void> => {
   await client.post(`/campaigns/${id}/stop`);
 };
 
-// ─── PATCH /campaigns/:id/status (archive only) ───────────────────────────────
+// ─── DELETE /campaigns/:id ───────────────────────────────────────────────────
+
+export const deleteCampaign = async (id: number): Promise<void> => {
+  await client.delete(`/campaigns/${id}`);
+};
+
+// ─── PATCH /campaigns/:id/status ─────────────────────────────────────────────
 
 export const updateCampaignStatus = async (
   id: number,
@@ -150,9 +213,33 @@ export const getBatches = async (): Promise<Batch[]> => {
 };
 
 // ─── GET /sending-numbers ─────────────────────────────────────────────────────
+// Returns { items: SendingNumber[], total: number }
 
 export const getSendingNumbers = async (): Promise<SendingNumber[]> => {
-  const { data } = await client.get<SendingNumber[]>("/sending-numbers");
+  const { data } = await client.get<SendingNumbersResponse | SendingNumber[]>(
+    "/sending-numbers"
+  );
   if (Array.isArray(data)) return data;
+  if (Array.isArray((data as SendingNumbersResponse).items))
+    return (data as SendingNumbersResponse).items;
   return [];
+};
+
+// ─── GET /campaigns/:id/sending-numbers ──────────────────────────────────────
+// Per-campaign sending number assignment (ask backend if not in detail response)
+
+export const getCampaignSendingNumbers = async (
+  id: number
+): Promise<SendingNumber[]> => {
+  try {
+    const { data } = await client.get<SendingNumbersResponse | SendingNumber[]>(
+      `/campaigns/${id}/sending-numbers`
+    );
+    if (Array.isArray(data)) return data;
+    if (Array.isArray((data as SendingNumbersResponse).items))
+      return (data as SendingNumbersResponse).items;
+    return [];
+  } catch {
+    return [];
+  }
 };

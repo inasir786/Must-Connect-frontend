@@ -1,20 +1,23 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   ArrowLeft, Save, Send, UploadCloud, Phone,
   Loader2, AlertCircle, CheckCircle2, Image as ImageIcon,
-  Megaphone, Layers, MessageSquare, CircleAlert,
+  Megaphone, Layers, MessageSquare, X, Video,
 } from "lucide-react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
-  getBatches, createCampaign, launchCampaign,
+  getBatches,
+  createCampaign,
+  uploadCampaignMedia,
+  launchCampaign,
   getSendingNumbers,
-  type Batch, type SendingNumber,
+  type Batch,
+  type SendingNumber,
 } from "@/api/campaigns";
 
 export const Route = createFileRoute("/campaigns/new")({
@@ -26,6 +29,25 @@ export const Route = createFileRoute("/campaigns/new")({
   }),
   component: CreateCampaignPage,
 });
+
+const MAX_FILES       = 5;
+const MAX_BYTES       = 10 * 1024 * 1024;
+const ACCEPTED_MIME   = ["image/png", "image/jpeg", "video/mp4"];
+const ACCEPTED_ACCEPT = "image/png,image/jpeg,video/mp4";
+
+function fmtBytes(b: number) {
+  if (b < 1024)        return `${b} B`;
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+  return `${(b / 1024 / 1024).toFixed(2)} MB`;
+}
+
+function distribute(numbers: SendingNumber[], total: number) {
+  const active = numbers.filter((n) => n.availability_status === "active");
+  if (!active.length || !total) return [] as { number: SendingNumber; contacts: number }[];
+  const base = Math.floor(total / active.length);
+  const rem  = total % active.length;
+  return active.map((n, i) => ({ number: n, contacts: base + (i < rem ? 1 : 0) }));
+}
 
 function SectionCard({
   step, icon, title, subtitle, children,
@@ -53,88 +75,135 @@ function SectionCard({
   );
 }
 
+function FileCard({ file, onRemove }: { file: File; onRemove: () => void }) {
+  const isVideo = file.type.includes("video");
+  const preview = !isVideo ? URL.createObjectURL(file) : null;
+  return (
+    <div className="group relative overflow-hidden rounded-lg border border-border bg-muted/30">
+      <div className="flex h-20 items-center justify-center overflow-hidden bg-muted/50">
+        {preview ? (
+          <img src={preview} alt={file.name} className="h-full w-full object-cover" />
+        ) : (
+          <Video className="h-7 w-7 text-muted-foreground" />
+        )}
+      </div>
+      <div className="px-2 py-1.5">
+        <p className="truncate text-xs font-medium text-foreground" title={file.name}>
+          {file.name}
+        </p>
+        <p className="text-[10px] text-muted-foreground">{fmtBytes(file.size)}</p>
+      </div>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute right-1 top-1 rounded-full bg-white/90 p-0.5 text-muted-foreground opacity-0 shadow transition-opacity hover:text-red-600 group-hover:opacity-100"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
 function CreateCampaignPage() {
   const navigate = useNavigate();
 
-  const [batches, setBatches]   = useState<Batch[]>([]);
-  const [numbers, setNumbers]   = useState<SendingNumber[]>([]);
+  const [batches,     setBatches]     = useState<Batch[]>([]);
+  const [numbers,     setNumbers]     = useState<SendingNumber[]>([]);
   const [loadingMeta, setLoadingMeta] = useState(true);
 
-  const [name, setName]               = useState("");
-  const [description, setDescription] = useState("");
-  const [selectedBatchId, setSelectedBatchId] = useState<number | null>(null); // single batch
-  const [templateName, setTemplateName]       = useState("");
-  const [message, setMessage] = useState(
-    "Hi {{name}}, applications for the Spring 2026 admissions are now open at MUST University. Reply YES to learn more."
+  const [name,            setName]            = useState("");
+  const [description,     setDescription]     = useState("");
+  const [selectedBatchId, setSelectedBatchId] = useState<number | null>(null);
+  const [message,         setMessage]         = useState(
+    "Hi {name}, applications for the Spring 2026 admissions are now open at MUST University. Reply YES to learn more."
   );
-  const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
+  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [saving, setSaving]   = useState(false);
-  const [error, setError]     = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error,  setError]  = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     Promise.all([getBatches(), getSendingNumbers()])
-      .then(([b, n]) => {
-        if (cancelled) return;
-        setBatches(b);
-        setNumbers(n);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err?.message ?? "Failed to load data");
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingMeta(false);
-      });
+      .then(([b, n]) => { if (!cancelled) { setBatches(b); setNumbers(n); } })
+      .catch((err) => { if (!cancelled) setError(err?.message ?? "Failed to load data"); })
+      .finally(() => { if (!cancelled) setLoadingMeta(false); });
     return () => { cancelled = true; };
   }, []);
 
-  const toggleNumber = (id: number) =>
-    setSelectedNumbers((cur) =>
-      cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]
-    );
+  const selectedBatch = batches.find((b) => b.id === selectedBatchId) ?? null;
+  const activeNumbers = numbers.filter((n) => n.availability_status === "active");
+  const distribution  = selectedBatch
+    ? distribute(activeNumbers, selectedBatch.valid_whatsapp_count)
+    : [];
 
-  const handleSubmit = async (launch: boolean) => {
-    if (!name.trim()) { setError("Campaign name is required."); return; }
+  function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
+    const picked = Array.from(e.target.files ?? []);
+    const slots  = MAX_FILES - mediaFiles.length;
+
+    if (slots <= 0) {
+      setError(`You've reached the maximum of ${MAX_FILES} files. Remove a file to add another.`);
+      e.target.value = "";
+      return;
+    }
+
+    const toAdd: File[] = [];
+    for (const f of picked) {
+      if (toAdd.length >= slots) {
+        setError(`Only ${slots} more file${slots !== 1 ? "s" : ""} can be added (limit: ${MAX_FILES}).`);
+        break;
+      }
+      if (!ACCEPTED_MIME.includes(f.type)) {
+        setError("Only PNG, JPG, or MP4 files are allowed.");
+        continue;
+      }
+      if (f.size > MAX_BYTES) {
+        setError("File must be 10 MB or smaller.");
+        continue;
+      }
+      toAdd.push(f);
+    }
+
+    if (toAdd.length > 0) setMediaFiles((prev) => [...prev, ...toAdd]);
+    e.target.value = "";
+  }
+
+  function removeFile(idx: number) {
+    setMediaFiles((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  async function handleSubmit(launch: boolean) {
+    if (!name.trim())     { setError("Campaign name is required."); return; }
     if (!selectedBatchId) { setError("Please select a batch."); return; }
-    if (!message.trim()) { setError("Message text is required."); return; }
+    if (!message.trim())  { setError("Message text is required."); return; }
 
     setError(null);
     setSaving(true);
 
     try {
-      // Step 1 — create as draft
       const created = await createCampaign({
-        name,
-        description,
-        batch_id: selectedBatchId,
-        message_text: message,
+        name:         name.trim(),
+        description:  description.trim(),
+        batch_id:     Number(selectedBatchId),
+        message_text: message.trim(),
       });
 
-      // Step 2 — launch if requested
+      if (mediaFiles.length > 0) {
+        await uploadCampaignMedia(created.id, mediaFiles);
+      }
+
       if (launch) {
         await launchCampaign(created.id);
-        navigate({
-          to: "/campaigns/success",
-          search: {
-            name: name || "Untitled Campaign",
-            contacts: selectedBatch?.valid_whatsapp_count ?? 0,
-          },
-        });
-      } else {
-        navigate({ to: "/campaigns" });
       }
+
+      navigate({ to: "/campaigns" });
     } catch (err: any) {
-      navigate({
-        to: "/campaigns/failed",
-        search: { reason: err?.response?.data?.detail ?? err?.message ?? "Failed to create campaign" },
-      });
+      setError(err?.response?.data?.detail ?? err?.message ?? "Failed to create campaign");
     } finally {
       setSaving(false);
     }
-  };
-
-  const selectedBatch = batches.find((b) => b.id === selectedBatchId);
+  }
 
   return (
     <AdminLayout
@@ -163,7 +232,9 @@ function CreateCampaignPage() {
               onClick={() => handleSubmit(true)}
               disabled={saving}
             >
-              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+              {saving
+                ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                : <Send className="mr-2 h-4 w-4" />}
               Launch Campaign
             </Button>
           </div>
@@ -171,14 +242,17 @@ function CreateCampaignPage() {
       }
     >
       <div className="mx-auto max-w-5xl space-y-6">
+
         {error && (
           <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
-            <AlertCircle className="h-4 w-4" />
-            <span>{error}</span>
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span className="flex-1">{error}</span>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-700">
+              <X className="h-4 w-4" />
+            </button>
           </div>
         )}
 
-        {/* Step 1 — Campaign Information */}
         <SectionCard
           step={1}
           icon={<Megaphone className="h-4 w-4" />}
@@ -187,7 +261,9 @@ function CreateCampaignPage() {
         >
           <div className="grid gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="name">Campaign Name <span className="text-destructive">*</span></Label>
+              <Label htmlFor="name">
+                Campaign Name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="name"
                 placeholder="e.g., Spring 2026 Admissions"
@@ -208,7 +284,6 @@ function CreateCampaignPage() {
           </div>
         </SectionCard>
 
-        {/* Step 2 — Select Batch */}
         <SectionCard
           step={2}
           icon={<Layers className="h-4 w-4" />}
@@ -220,7 +295,9 @@ function CreateCampaignPage() {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : batches.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">No validated batches found.</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              No validated batches found.
+            </p>
           ) : (
             <div className="space-y-2">
               {batches.map((b) => {
@@ -258,15 +335,8 @@ function CreateCampaignPage() {
               })}
             </div>
           )}
-          {selectedBatch && (
-            <p className="mt-3 text-xs text-muted-foreground">
-              Selected: <span className="font-medium text-foreground">{selectedBatch.batch_name}</span>
-              {" "}• {selectedBatch.valid_whatsapp_count.toLocaleString()} valid contacts
-            </p>
-          )}
         </SectionCard>
 
-        {/* Step 3 — Message Setup */}
         <SectionCard
           step={3}
           icon={<MessageSquare className="h-4 w-4" />}
@@ -276,16 +346,9 @@ function CreateCampaignPage() {
           <div className="grid gap-5 lg:grid-cols-[1fr_280px]">
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="template">Template Name</Label>
-                <Input
-                  id="template"
-                  placeholder="spring_admissions_v1"
-                  value={templateName}
-                  onChange={(e) => setTemplateName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="message">Message Body <span className="text-destructive">*</span></Label>
+                <Label htmlFor="message">
+                  Message Body <span className="text-destructive">*</span>
+                </Label>
                 <Textarea
                   id="message"
                   rows={6}
@@ -293,19 +356,63 @@ function CreateCampaignPage() {
                   onChange={(e) => setMessage(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Use <code className="rounded bg-muted px-1">{"{{name}}"}</code> to personalize.{" "}
-                  {message.length}/1024 characters
+                  Use{" "}
+                  <code className="rounded bg-muted px-1">{"{{name}}"}</code> to
+                  personalise. {message.length}/1024 characters
                 </p>
               </div>
-              {/* Static — no upload logic yet */}
-              <div className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center">
-                <UploadCloud className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
-                <p className="text-sm font-medium text-foreground">Attach Media (optional)</p>
-                <p className="text-xs text-muted-foreground">PNG, JPG or MP4 up to 10 MB</p>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label>
+                    Attach Media{" "}
+                    <span className="font-normal text-muted-foreground">(optional)</span>
+                  </Label>
+                  <span className={`text-xs font-medium ${mediaFiles.length >= MAX_FILES ? "text-red-500" : "text-muted-foreground"}`}>
+                    {mediaFiles.length}/{MAX_FILES} files
+                  </span>
+                </div>
+
+                {mediaFiles.length < MAX_FILES ? (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="cursor-pointer rounded-lg border border-dashed border-border bg-muted/30 px-4 py-5 text-center transition-colors hover:bg-muted/50 hover:border-accent"
+                  >
+                    <UploadCloud className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
+                    <p className="text-sm font-medium text-foreground">Click to upload media</p>
+                    <p className="text-xs text-muted-foreground">
+                      PNG, JPG or MP4 · max {MAX_FILES} files · 10 MB each
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-red-200 bg-red-50 px-4 py-4 text-center">
+                    <p className="text-sm font-medium text-red-600">
+                      Maximum {MAX_FILES} files reached
+                    </p>
+                    <p className="text-xs text-red-400">Remove a file to upload another</p>
+                  </div>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ACCEPTED_ACCEPT}
+                  multiple
+                  className="hidden"
+                  disabled={mediaFiles.length >= MAX_FILES}
+                  onChange={handleFilePick}
+                />
+
+                {mediaFiles.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
+                    {mediaFiles.map((f, i) => (
+                      <FileCard key={i} file={f} onRemove={() => removeFile(i)} />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Static preview */}
             <div className="rounded-lg border border-border bg-muted/40 p-4">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Preview
@@ -317,84 +424,115 @@ function CreateCampaignPage() {
                   </div>
                   <p className="text-xs font-semibold">MUST University</p>
                 </div>
-                <div className="mb-2 flex h-24 items-center justify-center rounded bg-muted text-muted-foreground">
-                  <ImageIcon className="h-6 w-6" />
-                </div>
-               {/* Static preview */}
-<p className="text-xs leading-relaxed text-foreground">
-  {message
-    .replace(/\{\{name\}\}/g, "Ahmad")
-    .replace(/\{name\}/g, "Ahmad")}
-</p>
+                {(() => {
+                  const first = mediaFiles.find((f) => f.type.startsWith("image/"));
+                  return (
+                    <div className="mb-2 flex h-24 items-center justify-center overflow-hidden rounded bg-muted">
+                      {first ? (
+                        <img
+                          src={URL.createObjectURL(first)}
+                          alt="preview"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                      )}
+                    </div>
+                  );
+                })()}
+                <p className="text-xs leading-relaxed text-foreground">
+                  {message
+                    .replace(/\{\{name\}\}/g, "Ahmad")
+                    .replace(/\{name\}/g, "Ahmad")}
+                </p>
               </div>
             </div>
           </div>
         </SectionCard>
 
-        {/* Step 4 — Sending Numbers (static for now) */}
         <SectionCard
           step={4}
           icon={<Phone className="h-4 w-4" />}
           title="Sending Numbers Assignment"
-          subtitle="Assign one or more WhatsApp Business numbers"
+          subtitle="Contacts will be automatically distributed across available numbers"
         >
           {loadingMeta ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : numbers.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">No sending numbers available.</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              No sending numbers available.
+            </p>
           ) : (
-            <div className="space-y-2">
-              {numbers.map((n) => {
-                const selected = selectedNumbers.includes(n.id);
-                const disabled = n.status !== "active";
-                return (
-                  <label
-                    key={n.id}
-                    className={`flex items-center justify-between gap-3 rounded-lg border px-4 py-3 transition-colors ${
-                      disabled
-                        ? "cursor-not-allowed border-border bg-muted/30 opacity-60"
-                        : selected
-                          ? "cursor-pointer border-accent bg-accent/5"
-                          : "cursor-pointer border-border hover:bg-muted/40"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Checkbox
-                        checked={selected}
-                        disabled={disabled}
-                        onCheckedChange={() => toggleNumber(n.id)}
-                      />
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-                        <Phone className="h-4 w-4" />
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+                <div>
+                  <p className="text-sm font-semibold text-blue-700">Automatic Distribution</p>
+                  <p className="text-xs text-blue-600 mt-0.5">
+                    {!selectedBatch
+                      ? "Select a batch above to see how contacts will be distributed across sending numbers."
+                      : activeNumbers.length === 0
+                        ? "No active sending numbers found. Messages will use the default number."
+                        : `The system will evenly distribute your contacts across ${activeNumbers.length} active sending number${activeNumbers.length !== 1 ? "s" : ""} to ensure optimal delivery rates and avoid spam detection.`}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {numbers.map((n) => {
+                  const isActive      = n.availability_status === "active";
+                  const share         = distribution.find((d) => d.number.id === n.id);
+                  const contactsLabel = selectedBatch
+                    ? isActive && share
+                      ? `${share.contacts.toLocaleString()} contacts`
+                      : "Not assigned"
+                    : "Select a batch to see assignment";
+
+                  return (
+                    <div
+                      key={n.id}
+                      className={`flex items-center justify-between gap-3 rounded-lg border px-4 py-3 transition-colors ${
+                        isActive ? "border-border bg-card" : "border-border bg-muted/30 opacity-60"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                          <Phone className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="font-mono text-sm font-semibold text-foreground">
+                            {n.phone_number}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {selectedBatch
+                              ? `${selectedBatch.batch_name} • ${contactsLabel}`
+                              : "Business Stub · WhatsApp Business"}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{n.label}</p>
-                        <p className="text-xs text-muted-foreground">
-                          WhatsApp Business {n.status === "active" ? "• Healthy" : "• Inactive"}
-                        </p>
-                      </div>
+                      <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+                        isActive
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : "border-slate-200 bg-slate-100 text-slate-500"
+                      }`}>
+                        {isActive
+                          ? <CheckCircle2 className="h-3 w-3" />
+                          : <AlertCircle className="h-3 w-3" />}
+                        {isActive ? "Active" : "Inactive"}
+                      </span>
                     </div>
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      n.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
-                    }`}>
-                      {n.status === "active"
-                        ? <CheckCircle2 className="h-3 w-3" />
-                        : <CircleAlert className="h-3 w-3" />}
-                      {n.status === "active" ? "Active" : "Inactive"}
-                    </span>
-                  </label>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           )}
         </SectionCard>
 
-        {/* Bottom note + actions */}
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          Ready to launch? Make sure you've reviewed the message, batch selection, and sending
-          numbers before clicking <strong>Launch Campaign</strong>.
+          Ready to launch? Review the message, batch, and sending numbers before clicking{" "}
+          <strong>Launch Campaign</strong>.
         </div>
 
         <div className="flex flex-col-reverse items-stretch justify-end gap-2 pb-4 sm:flex-row sm:items-center">
@@ -407,10 +545,13 @@ function CreateCampaignPage() {
             onClick={() => handleSubmit(true)}
             disabled={saving}
           >
-            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+            {saving
+              ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              : <Send className="mr-2 h-4 w-4" />}
             Launch Campaign
           </Button>
         </div>
+
       </div>
     </AdminLayout>
   );

@@ -128,17 +128,25 @@ function formatDateShort(iso: string): string {
   });
 }
 
-/**
- * Strips raw JSON/dict noise from backend descriptions.
- * "Batch updated: {'title': 'New Title', ...}" → "Batch updated"
- * "Merged 'file.csv' — 0 new contacts added, 9 duplicates skipped." → "Merged 'file.csv'"
- */
 function cleanDescription(raw: string): string {
-  // Remove everything from " — " onwards (merge stats)
   let clean = raw.replace(/\s*—.*$/, "");
-  // Remove Python dict payloads like ": {'key': 'val', ...}"
   clean = clean.replace(/:\s*\{.*\}/, "");
   return clean.trim();
+}
+
+// ─── Polling: field-by-field comparison for batch list ────────────────────────
+
+function batchListChanged(prev: Batch[], next: Batch[]): boolean {
+  if (prev.length !== next.length) return true;
+  return prev.some((b, i) =>
+    b.id                    !== next[i].id                    ||
+    b.status                !== next[i].status                ||
+    b.total_contacts        !== next[i].total_contacts        ||
+    b.valid_whatsapp_count  !== next[i].valid_whatsapp_count  ||
+    b.batch_name            !== next[i].batch_name            ||
+    b.education_year        !== next[i].education_year        ||
+    b.title                 !== next[i].title
+  );
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -212,7 +220,6 @@ function BatchDetailDrawer({
         side="right"
         className="flex w-full flex-col gap-0 p-0 sm:max-w-[480px]"
       >
-        {/* Header */}
         <SheetHeader className="border-b border-border px-6 py-4">
           <SheetTitle className="text-base">Batch Details</SheetTitle>
           <SheetDescription className="text-xs">
@@ -235,8 +242,6 @@ function BatchDetailDrawer({
         {detail && !loading && (
           <ScrollArea className="flex-1">
             <div className="space-y-6 px-6 py-5">
-
-              {/* Title banner */}
               <div className="rounded-xl bg-[oklch(0.305_0.135_265)] px-5 py-4">
                 <h2 className="text-lg font-bold text-accent-foreground leading-tight">
                   {batchDisplayName(detail)}
@@ -244,7 +249,6 @@ function BatchDetailDrawer({
                 <p className="mt-0.5 text-sm text-accent-foreground/70">{detail.title}</p>
               </div>
 
-              {/* Stats grid */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-xl border border-border bg-card p-4">
                   <p className="text-xs text-muted-foreground">Total Contacts</p>
@@ -252,7 +256,6 @@ function BatchDetailDrawer({
                     {detail.total_contacts.toLocaleString()}
                   </p>
                 </div>
-
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
                   <p className="text-xs text-emerald-700">Valid WhatsApp</p>
                   <p className="mt-1 text-2xl font-bold text-emerald-700">
@@ -262,7 +265,6 @@ function BatchDetailDrawer({
                     <p className="text-xs text-emerald-600">{validPercent}% valid</p>
                   )}
                 </div>
-
                 <div className="rounded-xl border border-red-200 bg-red-50 p-4">
                   <p className="text-xs text-red-600">Invalid Contacts</p>
                   <p className="mt-1 text-2xl font-bold text-red-600">
@@ -278,38 +280,18 @@ function BatchDetailDrawer({
 
               <Separator />
 
-              {/* Batch Information */}
               <div>
-                <h3 className="mb-3 text-sm font-semibold text-foreground">
-                  Batch Information
-                </h3>
+                <h3 className="mb-3 text-sm font-semibold text-foreground">Batch Information</h3>
                 <dl className="space-y-3">
                   {[
-                    {
-                      icon: <CalendarDays className="h-3.5 w-3.5" />,
-                      label: "Upload Date",
-                      value: formatDateShort(detail.created_at),
-                    },
-                    {
-                      icon: <RefreshCw className="h-3.5 w-3.5" />,
-                      label: "Last Updated",
-                      value: formatDateShort(detail.updated_at),
-                    },
-                    {
-                      icon: <User className="h-3.5 w-3.5" />,
-                      label: "Uploaded By",
-                      value: "Admin User",
-                    },
-                    {
-                      icon: <Hash className="h-3.5 w-3.5" />,
-                      label: "Batch ID",
-                      value: `BATCH-${String(detail.batch_id).padStart(4, "0")}`,
-                    },
+                    { icon: <CalendarDays className="h-3.5 w-3.5" />, label: "Upload Date", value: formatDateShort(detail.created_at) },
+                    { icon: <RefreshCw className="h-3.5 w-3.5" />, label: "Last Updated", value: formatDateShort(detail.updated_at) },
+                    { icon: <User className="h-3.5 w-3.5" />, label: "Uploaded By", value: "Admin User" },
+                    { icon: <Hash className="h-3.5 w-3.5" />, label: "Batch ID", value: `BATCH-${String(detail.batch_id).padStart(4, "0")}` },
                   ].map(({ icon, label, value }) => (
                     <div key={label} className="flex items-center justify-between">
                       <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        {icon}
-                        {label}
+                        {icon}{label}
                       </dt>
                       <dd className="text-xs font-medium text-foreground">{value}</dd>
                     </div>
@@ -319,7 +301,6 @@ function BatchDetailDrawer({
 
               <Separator />
 
-              {/* Files */}
               {detail.files.length > 0 && (
                 <div>
                   <h3 className="mb-3 text-sm font-semibold text-foreground">
@@ -327,24 +308,15 @@ function BatchDetailDrawer({
                   </h3>
                   <div className="space-y-2">
                     {detail.files.map((f) => (
-                      <div
-                        key={f.id}
-                        className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2.5"
-                      >
+                      <div key={f.id} className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
                         <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-blue-100">
                           <FileText className="h-4 w-4 text-blue-600" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-xs font-medium text-foreground">
-                            {f.file_name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatDate(f.uploaded_at)}
-                          </p>
+                          <p className="truncate text-xs font-medium text-foreground">{f.file_name}</p>
+                          <p className="text-xs text-muted-foreground">{formatDate(f.uploaded_at)}</p>
                         </div>
-                        <Badge variant="secondary" className="text-xs uppercase">
-                          {f.file_type}
-                        </Badge>
+                        <Badge variant="secondary" className="text-xs uppercase">{f.file_type}</Badge>
                       </div>
                     ))}
                   </div>
@@ -353,12 +325,9 @@ function BatchDetailDrawer({
 
               <Separator />
 
-              {/* Recent Activity */}
               {detail.activity_logs.length > 0 && (
                 <div>
-                  <h3 className="mb-3 text-sm font-semibold text-foreground">
-                    Recent Activity
-                  </h3>
+                  <h3 className="mb-3 text-sm font-semibold text-foreground">Recent Activity</h3>
                   <div className="space-y-3">
                     {detail.activity_logs.slice(0, 6).map((log) => {
                       const style = actionStyle(log.action_type);
@@ -382,39 +351,31 @@ function BatchDetailDrawer({
                   </div>
                 </div>
               )}
-
             </div>
           </ScrollArea>
         )}
 
-        {/* Footer actions */}
         {detail && !loading && (
           <div className="border-t border-border px-6 py-4 space-y-2">
             <Button
               className="w-full bg-[oklch(0.305_0.135_265)] text-accent-foreground hover:bg-[oklch(0.305_0.135_265)]/90"
               onClick={() => { onMerge(detail); onOpenChange(false); }}
             >
-              <GitMerge className="mr-2 h-4 w-4" />
-              Merge Batch
+              <GitMerge className="mr-2 h-4 w-4" />Merge Batch
             </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => { onUpgrade(detail); onOpenChange(false); }}
-            >
-              <ArrowUpCircle className="mr-2 h-4 w-4" />
-              Upgrade Batch
+            <Button variant="outline" className="w-full"
+              onClick={() => { onUpgrade(detail); onOpenChange(false); }}>
+              <ArrowUpCircle className="mr-2 h-4 w-4" />Upgrade Batch
             </Button>
             <Button
               variant="outline"
               className={`w-full ${isArchived ? "border-emerald-300 text-emerald-700 hover:bg-emerald-50" : "border-red-200 text-destructive hover:bg-red-50"}`}
               onClick={() => { onToggleArchive(detail); onOpenChange(false); }}
             >
-              {isArchived ? (
-                <><ArchiveRestore className="mr-2 h-4 w-4" />Unarchive Batch</>
-              ) : (
-                <><Archive className="mr-2 h-4 w-4" />Archive Batch</>
-              )}
+              {isArchived
+                ? <><ArchiveRestore className="mr-2 h-4 w-4" />Unarchive Batch</>
+                : <><Archive className="mr-2 h-4 w-4" />Archive Batch</>
+              }
             </Button>
           </div>
         )}
@@ -439,12 +400,7 @@ interface UploadDialogProps {
 }
 
 function UploadDialog({ open, onOpenChange, onSuccess }: UploadDialogProps) {
-  const [form, setForm] = useState<UploadFormState>({
-    title: "",
-    batch_name: "",
-    education_year: "",
-    file: null,
-  });
+  const [form, setForm] = useState<UploadFormState>({ title: "", batch_name: "", education_year: "", file: null });
   const [errors, setErrors] = useState<Partial<Record<keyof UploadFormState, string>>>({});
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -472,12 +428,7 @@ function UploadDialog({ open, onOpenChange, onSuccess }: UploadDialogProps) {
     if (!validate()) return;
     setSaving(true);
     try {
-      await createBatch({
-        file: form.file!,
-        title: form.title,
-        batch_name: form.batch_name,
-        education_year: form.education_year,
-      });
+      await createBatch({ file: form.file!, title: form.title, batch_name: form.batch_name, education_year: form.education_year });
       reset();
       onOpenChange(false);
       onSuccess();
@@ -495,24 +446,20 @@ function UploadDialog({ open, onOpenChange, onSuccess }: UploadDialogProps) {
           <DialogTitle>Upload Batch</DialogTitle>
           <DialogDescription>Add a new student contact batch</DialogDescription>
         </DialogHeader>
-
         <div className="space-y-4">
           {serverError && <ErrorBanner message={serverError} />}
-
           <div className="space-y-1">
             <Label htmlFor="title">Title</Label>
             <Input id="title" placeholder="e.g., Fall Admissions 2024" value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
             {errors.title && <p className="text-xs text-red-500">{errors.title}</p>}
           </div>
-
           <div className="space-y-1">
             <Label htmlFor="batch-name">Batch Name</Label>
             <Input id="batch-name" placeholder="e.g., Fall 2024" value={form.batch_name}
               onChange={(e) => setForm((f) => ({ ...f, batch_name: e.target.value }))} />
             {errors.batch_name && <p className="text-xs text-red-500">{errors.batch_name}</p>}
           </div>
-
           <div className="space-y-1">
             <Label htmlFor="education-year">Education Year</Label>
             <Select value={form.education_year} onValueChange={(v) => setForm((f) => ({ ...f, education_year: v }))}>
@@ -525,7 +472,6 @@ function UploadDialog({ open, onOpenChange, onSuccess }: UploadDialogProps) {
             </Select>
             {errors.education_year && <p className="text-xs text-red-500">{errors.education_year}</p>}
           </div>
-
           <div className="space-y-1">
             <Label>Upload File</Label>
             <label htmlFor="file-upload"
@@ -547,7 +493,6 @@ function UploadDialog({ open, onOpenChange, onSuccess }: UploadDialogProps) {
             {errors.file && <p className="text-xs text-red-500">{errors.file}</p>}
           </div>
         </div>
-
         <DialogFooter>
           <Button variant="outline" onClick={() => { reset(); onOpenChange(false); }}>Cancel</Button>
           <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleSubmit} disabled={saving}>
@@ -778,16 +723,13 @@ function BatchCard({ batch, onViewDetail, onToggleArchive, onMerge, onUpgrade }:
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); onViewDetail(batch); }}>
-              <Eye className="mr-2 h-4 w-4 text-muted-foreground" />
-              View Details
+              <Eye className="mr-2 h-4 w-4 text-muted-foreground" />View Details
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); onUpgrade(batch); }}>
-              <ArrowUpCircle className="mr-2 h-4 w-4 text-muted-foreground" />
-              Upgrade Batch
+              <ArrowUpCircle className="mr-2 h-4 w-4 text-muted-foreground" />Upgrade Batch
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); onMerge(batch); }}>
-              <GitMerge className="mr-2 h-4 w-4 text-muted-foreground" />
-              Merge Batch
+              <GitMerge className="mr-2 h-4 w-4 text-muted-foreground" />Merge Batch
             </DropdownMenuItem>
             <DropdownMenuItem
               className={isArchived ? "text-emerald-600 focus:text-emerald-600" : "text-destructive focus:text-destructive"}
@@ -856,9 +798,7 @@ function BatchCard({ batch, onViewDetail, onToggleArchive, onMerge, onUpgrade }:
 
 function BatchesPage() {
   const [batches, setBatches] = useState<Batch[]>([]);
-  const [meta, setMeta] = useState<BatchListMeta>({
-    total: 0, page: 1, per_page: 10, total_pages: 1,
-  });
+  const [meta, setMeta] = useState<BatchListMeta>({ total: 0, page: 1, per_page: 10, total_pages: 1 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -873,8 +813,13 @@ function BatchesPage() {
   const [detailId, setDetailId] = useState<number | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  const fetchBatches = useCallback(async () => {
-    setLoading(true);
+  // ── Polling refs ──
+  const batchesRef = useRef<Batch[]>([]);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchBatches = useCallback(async (isInitial = false) => {
+    if (isInitial) setLoading(true);
     setError(null);
     try {
       const res = await getBatches({
@@ -884,23 +829,36 @@ function BatchesPage() {
         status: status !== "all" ? status : undefined,
         sort: sort !== "latest" ? sort : undefined,
       });
-      setBatches(res.items);
-      setMeta(res.meta);
+      // ✅ Only update state if cards actually changed
+      if (batchListChanged(batchesRef.current, res.items)) {
+        batchesRef.current = res.items;
+        setBatches(res.items);
+        setMeta(res.meta);
+      }
     } catch (err: any) {
       setError(extractError(err));
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
   }, [page, query, status, sort]);
 
-  useEffect(() => { fetchBatches(); }, [fetchBatches]);
+  useEffect(() => {
+    fetchBatches(true); // initial load with spinner
 
-  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+    intervalRef.current = setInterval(() => {
+      fetchBatches(false); // silent poll every 60s
+    }, 60_000);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [fetchBatches]);
+
   const handleQueryChange = (val: string) => {
     setQuery(val);
     setPage(1);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => fetchBatches(), 400);
+    searchTimeout.current = setTimeout(() => fetchBatches(false), 400);
   };
 
   const handleViewDetail = useCallback((batch: Batch) => {
@@ -911,7 +869,7 @@ function BatchesPage() {
   const handleToggleArchive = useCallback(async (batch: Batch) => {
     try {
       await toggleArchiveBatch(batch.id);
-      fetchBatches();
+      fetchBatches(false);
     } catch (err: any) {
       setError(extractError(err));
     }
@@ -933,38 +891,33 @@ function BatchesPage() {
             </p>
           </div>
           <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => setUploadOpen(true)}>
-            <Upload className="mr-2 h-4 w-4" />
-            Upload Batch
+            <Upload className="mr-2 h-4 w-4" />Upload Batch
           </Button>
         </div>
       }
     >
-      {/* All dialogs & drawer mounted at page level */}
-      <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} onSuccess={fetchBatches} />
+      <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} onSuccess={() => fetchBatches(false)} />
 
       <MergeDialog
         batch={mergeTarget}
         open={!!mergeTarget}
         onOpenChange={(v) => { if (!v) setMergeTarget(null); }}
-        onSuccess={fetchBatches}
+        onSuccess={() => fetchBatches(false)}
       />
 
       <UpgradeDialog
         batch={upgradeTarget}
         open={!!upgradeTarget}
         onOpenChange={(v) => { if (!v) setUpgradeTarget(null); }}
-        onSuccess={fetchBatches}
+        onSuccess={() => fetchBatches(false)}
       />
 
       <BatchDetailDrawer
         batchId={detailId}
         open={detailOpen}
-        onOpenChange={(v) => {
-          setDetailOpen(v);
-          if (!v) setDetailId(null);
-        }}
-        onMerge={(b) => { setMergeTarget(b); }}
-        onUpgrade={(b) => { setUpgradeTarget(b); }}
+        onOpenChange={(v) => { setDetailOpen(v); if (!v) setDetailId(null); }}
+        onMerge={(b) => setMergeTarget(b)}
+        onUpgrade={(b) => setUpgradeTarget(b)}
         onToggleArchive={handleToggleArchive}
       />
 

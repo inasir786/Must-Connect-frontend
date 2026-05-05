@@ -165,10 +165,11 @@ function ChatsPage() {
   // ── Derived ──────────────────────────────────────────────────────────────
   const activeContact = contacts.find((c) => c.phone_number === activePhone);
 
-  const filteredContacts = contacts.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.phone_number.includes(search)
-  );
+const filteredContacts = contacts.filter((c) =>
+  c.last_message &&
+  (c.name.toLowerCase().includes(search.toLowerCase()) ||
+  c.phone_number.includes(search))
+);
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (

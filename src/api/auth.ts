@@ -22,7 +22,8 @@ export const login = async (payload: LoginPayload): Promise<LoginResponse> => {
   const days = payload.remember_me ? data.expires_in_minutes / 60 / 24 : undefined;
   Cookies.set("access_token", data.access_token, {
     expires: days,
-    sameSite: "lax",
+    secure: true,
+    sameSite: "strict",
   });
 
   return data;
@@ -30,7 +31,7 @@ export const login = async (payload: LoginPayload): Promise<LoginResponse> => {
 
 export const logout = () => {
   Cookies.remove("access_token");
-  window.location.href = "/admin/login";
+  window.location.href = "/login";
 };
 
 export const getStoredToken = (): string | null => {

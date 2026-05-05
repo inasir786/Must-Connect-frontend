@@ -1,10 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { getDashboard, DashboardData } from "@/api/dashboard";
 import { useNavigate } from "@tanstack/react-router";
+import Cookies from "js-cookie";
 
 export const Route = createFileRoute("/")({
+  beforeLoad: () => {
+    const token = Cookies.get("access_token");
+    if (!token) {
+      throw redirect({ to: "/login" });
+    }
+  },
   head: () => ({
     meta: [
       { title: "Dashboard — MUST Connect" },
@@ -49,33 +56,60 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function SkeletonCard() {
+const hasChanged = (prev: DashboardData | null, next: DashboardData): boolean => {
+  if (!prev) return true;
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 animate-pulse">
-      <div className="h-4 bg-slate-100 rounded w-1/3 mb-4" />
-      <div className="h-8 bg-slate-100 rounded w-1/2" />
-    </div>
+    prev.active_campaign?.sent          !== next.active_campaign?.sent          ||
+    prev.active_campaign?.pending       !== next.active_campaign?.pending       ||
+    prev.active_campaign?.progress      !== next.active_campaign?.progress      ||
+    prev.active_campaign?.engagement    !== next.active_campaign?.engagement    ||
+    prev.active_campaign?.status        !== next.active_campaign?.status        ||
+    prev.summary?.total_batches         !== next.summary?.total_batches         ||
+    prev.summary?.engagement            !== next.summary?.engagement            ||
+    prev.summary?.university_visits     !== next.summary?.university_visits     ||
+    prev.recent_batches?.length         !== next.recent_batches?.length         ||
+    (prev.recent_batches?.some((b, i) =>
+      b.status !== next.recent_batches?.[i]?.status
+    ) ?? false)
   );
-}
+};
 
 function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  useEffect(() => {
-    let cancelled = false;
-    getDashboard()
-      .then((res) => { if (!cancelled) setData(res); })
-      .catch((err) => {
-        if (!cancelled) {
-          const detail = err?.response?.data?.detail;
-          setError(typeof detail === "string" ? detail : err?.message || "Failed to load dashboard.");
-        }
-      })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+
+  const dataRef = useRef<DashboardData | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchData = useCallback(async (isInitial = false) => {
+    if (isInitial) setLoading(true);
+    try {
+      const res = await getDashboard();
+      if (hasChanged(dataRef.current, res)) {
+        dataRef.current = res;
+        setData(res);
+      }
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      setError(typeof detail === "string" ? detail : err?.message || "Failed to load dashboard.");
+    } finally {
+      if (isInitial) setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchData(true);
+
+    intervalRef.current = setInterval(() => {
+      fetchData(false);
+    }, 60_000);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [fetchData]);
 
   const campaign = data?.active_campaign;
   const summary = data?.summary;

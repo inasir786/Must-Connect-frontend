@@ -90,11 +90,10 @@ function HighlyEngagedPage() {
   // ── Raw data from API ────────────────────────────────────────────────
   const [allStudents, setAllStudents] = useState<EngagedStudent[]>([]);
   const [allCampaigns, setAllCampaigns] = useState<EngagedStudentCampaign[]>([]);
-  const [totalFromApi, setTotalFromApi] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError]   = useState<string | null>(null);
 
-  // ── Fetch ALL records once (no server-side filter since API ignores them) ──
+  // ── Fetch ALL records once ───────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -104,11 +103,12 @@ function HighlyEngagedPage() {
       .then((res) => {
         if (cancelled) return;
         setAllStudents(res.items);
-        setTotalFromApi(res.meta.total);
 
-        // Build unique campaigns list
+        // Build unique campaigns list — guard against null campaign
         const map = new Map<number, EngagedStudentCampaign>();
-        res.items.forEach((s) => map.set(s.campaign.id, s.campaign));
+        res.items.forEach((s) => {
+          if (s.campaign) map.set(s.campaign.id, s.campaign);
+        });
         setAllCampaigns(Array.from(map.values()));
       })
       .catch((err: Error) => { if (!cancelled) setError(err.message); })
@@ -117,32 +117,13 @@ function HighlyEngagedPage() {
     return () => { cancelled = true; };
   }, []);
 
+  // ── Applied filter state (separate from UI inputs) ───────────────────
+  const [appliedFrom, setAppliedFrom]         = useState(fromDate);
+  const [appliedTo, setAppliedTo]             = useState(toDate);
+  const [appliedCampaign, setAppliedCampaign] = useState("all");
+
   // ── Client-side filtering ────────────────────────────────────────────
   const PER_PAGE = 20;
-
-  const filtered = useMemo(() => {
-    const from = parseInputDate(fromDate);
-    const to   = parseInputDate(toDate);
-    // set "to" to end of day
-    if (to) to.setHours(23, 59, 59, 999);
-
-    return allStudents.filter((s) => {
-      // Campaign filter
-      if (selectedCampaign !== "all" && String(s.campaign.id) !== selectedCampaign) return false;
-
-      // Date filter on last_message_at
-      const msgDate = new Date(s.last_message_at);
-      if (from && msgDate < from) return false;
-      if (to   && msgDate > to)   return false;
-
-      return true;
-    });
-  }, [allStudents, fromDate, toDate, selectedCampaign]);
-
-  // Reset to page 1 whenever filter changes
-  const [appliedFrom, setAppliedFrom]     = useState(fromDate);
-  const [appliedTo, setAppliedTo]         = useState(toDate);
-  const [appliedCampaign, setAppliedCampaign] = useState("all");
 
   const visibleStudents = useMemo(() => {
     const from = parseInputDate(appliedFrom);
@@ -150,10 +131,17 @@ function HighlyEngagedPage() {
     if (to) to.setHours(23, 59, 59, 999);
 
     return allStudents.filter((s) => {
+      // Hide students with no campaign
+      if (!s.campaign) return false;
+
+      // Campaign filter
       if (appliedCampaign !== "all" && String(s.campaign.id) !== appliedCampaign) return false;
+
+      // Date filter on last_message_at
       const msgDate = new Date(s.last_message_at);
       if (from && msgDate < from) return false;
       if (to   && msgDate > to)   return false;
+
       return true;
     });
   }, [allStudents, appliedFrom, appliedTo, appliedCampaign]);
@@ -205,7 +193,7 @@ function HighlyEngagedPage() {
   const showFrom = (safePage - 1) * PER_PAGE + 1;
   const showTo   = Math.min(safePage * PER_PAGE, visibleStudents.length);
 
-  // ── Export CSV ───────────────────────────────────────────────────────────
+  // ── Export CSV ───────────────────────────────────────────────────────
   function handleExport() {
     if (visibleStudents.length === 0) return;
 
@@ -384,7 +372,6 @@ function HighlyEngagedPage() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-foreground">{s.student_name}</p>
-                      
                       </div>
                     </div>
                   </TableCell>
