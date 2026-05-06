@@ -344,13 +344,14 @@ function FaqCategoryDetail() {
         </div>
       </div>
 
+      {/* Create FAQ Dialog */}
       <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); setCreateError(null); }}>
-        <DialogContent className="sm:max-w-lg p-0 overflow-hidden">
-          <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-3 text-white">
+        <DialogContent className="sm:max-w-lg p-0 overflow-hidden [&>button]:hidden">
+          <div className="flex items-center justify-between bg-primary px-5 py-3 text-primary-foreground">
             <DialogHeader className="space-y-0">
-              <DialogTitle className="text-white">Create New FAQ</DialogTitle>
+              <DialogTitle className="text-primary-foreground">Create New FAQ</DialogTitle>
             </DialogHeader>
-            <DialogClose className="text-white/80 hover:text-white">
+            <DialogClose className="text-primary-foreground/80 hover:text-primary-foreground">
               <X className="h-4 w-4" />
             </DialogClose>
           </div>
@@ -396,13 +397,14 @@ function FaqCategoryDetail() {
         </DialogContent>
       </Dialog>
 
+      {/* Edit FAQ Dialog */}
       <Dialog open={!!editTarget} onOpenChange={(v) => { if (!v) setEditTarget(null); }}>
-        <DialogContent className="sm:max-w-lg p-0 overflow-hidden">
-          <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-3 text-white">
+        <DialogContent className="sm:max-w-lg p-0 overflow-hidden [&>button]:hidden">
+          <div className="flex items-center justify-between bg-primary px-5 py-3 text-primary-foreground">
             <DialogHeader className="space-y-0">
-              <DialogTitle className="text-white">Edit FAQ</DialogTitle>
+              <DialogTitle className="text-primary-foreground">Edit FAQ</DialogTitle>
             </DialogHeader>
-            <DialogClose className="text-white/80 hover:text-white">
+            <DialogClose className="text-primary-foreground/80 hover:text-primary-foreground">
               <X className="h-4 w-4" />
             </DialogClose>
           </div>
